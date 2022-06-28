@@ -15,100 +15,63 @@ AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 HIVE_METASTORE_URI = os.getenv("HIVE_METASTORE_URI")
 
 spark = SparkSession.builder \
-    .appName('Clean data') \
+    .appName('Silver data') \
     .getOrCreate()
 
-    
-    # .config("hive.metastore.uris", "thrift://hive-metastore:9083")\
-    # .config("spark.sql.warehouse.dir","s3a://datalake/warehouse")\
-    # .config("spark.hadoop.fs.s3a.access.key", AWS_ACCESS_KEY) \
-    # .config("spark.hadoop.fs.s3a.secret.key", AWS_SECRET_KEY) \
-    # .config("fs.s3a.endpoint", AWS_S3_ENDPOINT)\
-    # .config("spark.hadoop.fs.s3a.path.style.access", "true")\
-    # .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
-    # .config("fs.s3a.connection.ssl.enabled", "false")\
-    # .config('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')\
-    # .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-    # .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")\
-    # .config('spark.jars','/opt/spark/jars/aws-java-sdk-bundle-1.11.375.jar')\
-    # .config('spark.jars','/opt/spark/jars/hadoop-aws-3.2.0.jar')\
-    # .config('spark.jars','/opt/spark/jars/delta-core_2.12-1.0.1.jar')\
-    # .enableHiveSupport()\
-
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-hadoop_conf.set("fs.s3a.access.key", AWS_ACCESS_KEY)
-hadoop_conf.set("fs.s3a.secret.key", AWS_SECRET_KEY)
-hadoop_conf.set("fs.s3a.endpoint", AWS_S3_ENDPOINT)
-hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+hadoop_conf.set("fs.s3a.access.key", "AKIATLEGUPNKMJLK7I7R")
+hadoop_conf.set("fs.s3a.secret.key", "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")
+hadoop_conf.set("fs.s3a.endpoint", "s3.amazonaws.com")
 hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
-hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
-hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-
-
-
-hadoop_conf.set('spark.jars','/opt/spark/jars/aws-java-sdk-bundle-1.11.375.jar')
-hadoop_conf.set('spark.jars','/opt/spark/jars/hadoop-aws-3.2.0.jar')
-hadoop_conf.set('spark.jars','/opt/spark/jars/delta-core_2.12-1.0.1.jar')
-hadoop_conf.set('spark.jars','/opt/spark/jars/postgresql-42.3.5.jar')
-
-# hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-# hadoop_conf.set("fs.s3a.access.key", AWS_ACCESS_KEY)
-# hadoop_conf.set("fs.s3a.secret.key", AWS_SECRET_KEY)
-# hadoop_conf.set("fs.s3a.endpoint", AWS_S3_ENDPOINT)
-# hadoop_conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
-# hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-# hadoop_conf.set("fs.s3a.connection.ssl.enabled", "false")
-# hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
-# hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
-# hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-# hadoop_conf.set('spark.jars','/opt/spark/jars/aws-java-sdk-bundle-1.11.375.jar')
-# hadoop_conf.set('spark.jars','/opt/spark/jars/hadoop-aws-3.2.0.jar')
-# hadoop_conf.set('spark.jars','/opt/spark/jars/delta-core_2.12-1.0.1.jar')
-# hadoop_conf.set('spark.jars','/opt/spark/jars/postgresql-42.3.5.jar')
-
-
-
+hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 
 spark.sparkContext.setLogLevel("ERROR")
-
-spark.sql("CREATE DATABASE IF NOT EXISTS dwh COMMENT 'Data Warehouse for Car Part'")
+spark.sql("CREATE DATABASE IF NOT EXISTS dwh COMMENT 'Data Warehouse for dvdrental'")
 
 
 # Reading tables from landing area
 print('\nReading ...')
-Brand = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Brand')
-Car = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Car')
-Customer = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Customer')
-Orders = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Orders')
-Part_for_Car = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Part_for_Car')
-Part_in_Order = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Part_in_Order')
-Part_Maker = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Part_Maker')
-Part_Supplier = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Part_Supplier')
-Part = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Part')
-Supplier = spark.read.format("delta").load(f's3a://datalake/bronze/CarPartsDB/{today}/Supplier')
+actor = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/actor')
+address = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/address')
+category = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/category')
+city = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/city')
+country = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/country')
+customer = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/customer')
+film = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/film')
+film_actor = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/film_actor')
+film_category = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/film_category')
+inventory = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/inventory')
+language = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/language')
+payment = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/payment')
+rental = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/rental')
+staff = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/staff')
+store = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/store')
+
+
 print('End of reading... \n')
-
-
 
 # transforming tables to a set of dimensionel tables
 print('\ntransforming ...')
-Brand.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Brand').saveAsTable("dwh.DimBrand")
-Car.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Car').saveAsTable("dwh.DimCar")
-Customer.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Customer').saveAsTable("dwh.DimCustomer")
-Orders.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Orders').saveAsTable("dwh.DimOrders")
-Part_Maker.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Part_Maker').saveAsTable("dwh.DimPartMaker")
-Part_for_Car.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Part_for_Car').saveAsTable("dwh.DimPartForCar")
-Part_Supplier.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Part_Supplier').saveAsTable("dwh.DimPartSupplier")
-Supplier.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Supplier').saveAsTable("dwh.DimSupplier")
-Part.write.format('delta').mode('overwrite').option('path','s3a://datalake/silver/warehouse/CarParts/Dim_Part').saveAsTable("dwh.DimPart")
+actor.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Actor').saveAsTable("dwh.Dim.Actor")
+address.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Address').saveAsTable("dwh.Dim.Address")
+category.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Category').saveAsTable("dwh.Dim.Category")
+city.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_City').saveAsTable("dwh.Dim.City")
+country.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Country').saveAsTable("dwh.Dim.Country")
+film.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film').saveAsTable("dwh.Dim.Film")
+film_actor.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film_actor').saveAsTable("dwh.Dim.Film_actor")
+film_category.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film_category').saveAsTable("dwh.Dim.Film_category")
+inventory.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Inventory').saveAsTable("dwh.Dim.Inventory")
+language.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Language').saveAsTable("dwh.Dim.Language")
+payment.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Payment').saveAsTable("dwh.Dim.Payment")
+rental.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Rental').saveAsTable("dwh.Dim.Rental")
+staff.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Staff').saveAsTable("dwh.Dim.Staff")
+store.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Store').saveAsTable("dwh.Dim.Store")
 
-Part_in_Order.join(Orders, 'order_id') \
-    .join(Part_Supplier,'part_supplier_id')\
-    .join(Part, 'part_id')\
-    .join(Part_for_Car, 'part_id')\
-    .join(Car, 'car_id')\
-    .select("part_in_order_id", "brand_id", "car_id", "car_manufacturer_id", "customer_id", "order_id", "part_id",
-       "part_maker_id", "part_supplier_id", Part.supplier_id, "actual_sale_price", "quantity")\
-    .write.format('delta').mode('overwrite')\
-    .option('path','s3a://datalake/silver/warehouse/CarParts/Fact_part_in_Order').saveAsTable("dwh.FactPartInOrder")
+payment.join(rental, 'customer_id') \
+    .join(customer,'customer_id')\
+    .join(address, 'address_id')\
+    .join(city, 'city_id')\
+    .join(country, 'country_id')\
+    .write.format('parquet').mode('overwrite')\
+    .option('path','s3a://datalake/silver/warehouse/dvdrental/Fact_part_in_Order').saveAsTable("dwh.FactPartInOrder")
 print('End Of Transforming')
