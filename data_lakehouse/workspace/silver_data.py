@@ -24,6 +24,8 @@ hadoop_conf.set("fs.s3a.secret.key", "KA+JHILXWWIC1Be3b71zg5BDn5WRzGc87/C7jZUk")
 hadoop_conf.set("fs.s3a.endpoint", "s3.amazonaws.com")
 hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
 hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
 spark.sparkContext.setLogLevel("ERROR")
 spark.sql("CREATE DATABASE IF NOT EXISTS dwh COMMENT 'Data Warehouse for dvdrental'")
