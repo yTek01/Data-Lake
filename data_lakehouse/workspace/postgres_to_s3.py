@@ -43,9 +43,9 @@ dataframe = raw_json_dataframe.withColumn("data", F.explode(F.col("data"))) \
 tables_names = ['actor', 'address', 'category', 'city', 'country', 'customer', \
                'film', 'film_actor', 'film_category', 'inventory', 'language', 'payment', 'rental', 'staff', 'store']
 
-postgres_url= "jdbc:postgresql://yb-master-n1:5433/dvdrental"
+postgres_url= "jdbc:postgresql://yb-tserver-n1:5433/dvdrental"
 
-expectations_helper(dataframe)
+# expectations_helper(dataframe)
 
 for table_name in tables_names:
     print(f"{table_name} table transformation ...")
