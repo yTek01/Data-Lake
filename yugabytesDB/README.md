@@ -123,7 +123,6 @@ docker cp restore.sql yb-tserver-n1:/home/yugabyte/ \
 docker cp restore.sql yb-tserver-n1:/home/yugabyte/ 
 ```
 
-
 ```
 docker cp restore.sql postgres:/
 ```

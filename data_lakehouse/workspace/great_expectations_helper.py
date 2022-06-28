@@ -1,14 +1,11 @@
 
-from pprint import pprint
-import boto3
 from ruamel import yaml
 import great_expectations as ge
 from great_expectations.core.batch import BatchRequest, RuntimeBatchRequest
 from great_expectations.data_context import BaseDataContext
 from great_expectations.data_context.types.base import (
     DataContextConfig,
-    DatasourceConfig,
-    S3StoreBackendDefaults
+    InMemoryStoreBackendDefaults,
 )
 from pyspark.sql import SparkSession
 
@@ -27,45 +24,16 @@ Employee.show()
 
 def expectations_helper(data):
     
-    s3 = boto3.resource('s3',
-       aws_access_key_id = 'XXXXXXXXXXXXXXXXXXXXXXXXX', #FOR THE CREDENTIAL TO WORK FOR GE you must use AWS Configure method on the instance
-       aws_secret_access_key= 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-       region_name = 'us-east-1')
-    
-    bucket_name = "great.expectations.results"
-    store_backend_defaults = S3StoreBackendDefaults(default_bucket_name=bucket_name,
-                                                   validations_store_bucket_name='override_default_validations_store_bucket_name_in_S3StoreBackendDefaults',
-                                                   validations_store_prefix='override_default_validations_store_prefix_in_S3StoreBackendDefaults'
-                                                   )
-
-    stores = {
-        'evaluation_parameter_store' : {'class_name' : 'EvaluationParameterStore'}, 
-        'expectations_S3_store' : {
-            'class_name' : 'ExpectationsStore', 
-            'store_backend' : {
-                'class_name' : 'TupleS3StoreBackend', 
-                'bucket' : bucket_name,
-                'prefix' : 'expectations'
-            }
-        },
-        'validations_s3_store' : {
-            'class_name' : 'ValidationsStore', 
-            'store_backend' : {
-                'bucket' : bucket_name,
-                'class_name' : 'TupleS3StoreBackend', 
-                'prefix' : 'expectations'
-            }
-        }
-    }
-
-
+    store_backend_defaults = InMemoryStoreBackendDefaults()
 
     data_context_config = DataContextConfig(
         store_backend_defaults=store_backend_defaults,
-        stores=stores,
+        checkpoint_store_name=store_backend_defaults.checkpoint_store_name,
     )
 
+
     context = BaseDataContext(project_config=data_context_config)
+
     datasource_config = {
         "name": "my_spark_dataframe",
         "class_name": "Datasource",
@@ -77,10 +45,10 @@ def expectations_helper(data):
             }
         },
     }
+
     context.test_yaml_config(yaml.dump(datasource_config))
+
     context.add_datasource(**datasource_config)
-
-
 
 
     batch_request = RuntimeBatchRequest(
@@ -88,18 +56,21 @@ def expectations_helper(data):
         data_connector_name="default_runtime_data_connector_name",
         data_asset_name="Spark_Dataframe",  
         batch_identifiers={"batch_id": "default_identifier"},
-        runtime_parameters={"batch_data": data},
+        runtime_parameters={"batch_data": Employee},
     )
+
+
     context.create_expectation_suite(
         expectation_suite_name="test_suite", overwrite_existing=True
     )
+
+
     validator = context.get_validator(
         batch_request=batch_request, expectation_suite_name="test_suite"
     )
 
 
     print(validator.head())
-
     validator.expect_column_values_to_not_be_null('Id')
     validator.expect_column_values_to_be_unique('Name')
     return "Your data is available in S3 bucket"
