@@ -37,7 +37,8 @@ docker exec -it master bash /opt/workspace/dependencies/packages_installer.sh
 
 ```
 
-
-docker exec -it master spark-submit --master spark://master:7077 /opt/workspace/postgres_to_s3.py
-
+* Run Spark Jobs from the Docker containers.
+```BASH
+docker exec -it master spark-submit --master spark://master:7077 /opt/bitnami/spark/postgres_to_s3.py
+```
 

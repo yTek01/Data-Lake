@@ -3,3 +3,5 @@ lxml
 python-decouple
 requests
 pandas
+great-expectations
+boto3

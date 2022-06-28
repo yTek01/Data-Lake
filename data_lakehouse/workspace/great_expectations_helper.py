@@ -25,7 +25,7 @@ Employee.show()
 
 
 
-def expectations_helper():
+def expectations_helper(data):
     
     s3 = boto3.resource('s3',
        aws_access_key_id = 'XXXXXXXXXXXXXXXXXXXXXXXXX', #FOR THE CREDENTIAL TO WORK FOR GE you must use AWS Configure method on the instance
@@ -88,7 +88,7 @@ def expectations_helper():
         data_connector_name="default_runtime_data_connector_name",
         data_asset_name="Spark_Dataframe",  
         batch_identifiers={"batch_id": "default_identifier"},
-        runtime_parameters={"batch_data": DATA},
+        runtime_parameters={"batch_data": data},
     )
     context.create_expectation_suite(
         expectation_suite_name="test_suite", overwrite_existing=True

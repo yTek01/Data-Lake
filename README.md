@@ -1,3 +1,3 @@
 # Delta-lake-ETL
 
-Here is the thing, You must complete this guy today
+Here is the thing, Lakehouse is the real-deal.
