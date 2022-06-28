@@ -22,9 +22,11 @@ PASSWORD=123456789
 * Create a Postgres database, we are going to name it CarParts and use CarParts.sql file to create tables).
 ```
 docker exec -it postgres /bin/sh
-psql -U root -d CarParts -W
+psql -U root -d dvdrental -W
 password: root
 ```
+
+psql -U postgres -d dvdrental -W
 
 
 Use the SQL commands in CarParts.sql file to create the tables and `\dt` to confirm the list. 

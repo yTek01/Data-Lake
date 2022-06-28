@@ -57,12 +57,12 @@ services:
     image: postgres:14.2
     container_name: postgres
     restart: always
-    volumes:
-        - ./database-data:/var/lib/postgresql/data/
+    # volumes:
+    #     - ./database-data:/var/lib/postgresql/data/
     environment:
         POSTGRES_USER: root
         POSTGRES_PASSWORD: root
-        POSTGRES_DB: CarParts
+        POSTGRES_DB: dvdrental
     ports:
     - "5432:5432"
     

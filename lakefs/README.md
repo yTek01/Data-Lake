@@ -85,6 +85,7 @@ aws --version
 
 * Configure the AWS CLI
 ```bash
+aws configure
 AWS Access Key ID [None]: AKIATLEGUPNKFGG2BAUA
 AWS Secret Access Key [None]: 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
 Default region name [None]: us-east-1

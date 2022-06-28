@@ -21,8 +21,8 @@ spark = SparkSession \
     .getOrCreate() 
 
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-hadoop_conf.set("fs.s3a.access.key", AWS_ACCESS_KEY)
-hadoop_conf.set("fs.s3a.secret.key", AWS_SECRET_KEY)
+hadoop_conf.set("fs.s3a.access.key", "AKIATLEGUPNKMJLK7I7R")
+hadoop_conf.set("fs.s3a.secret.key", "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")
 hadoop_conf.set("fs.s3a.endpoint", "s3.amazonaws.com")
 hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
 hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
@@ -39,10 +39,11 @@ raw_json_dataframe.createOrReplaceTempView("Mutual_benefit")
 dataframe = raw_json_dataframe.withColumn("data", F.explode(F.col("data"))) \
         .withColumn('meta', F.expr("meta")) \
         .select("data.*", "meta.*")
-tables_names = ['Part_in_Order', 'Supplier', 'Brand', 'Part', 'Part_for_Car', 'Part_Supplier', \
-               'Customer', 'Customer_Statut', 'Orders', 'Car_Manufacturer', 'Car', 'Part_Maker']
 
-postgres_url= "jdbc:postgresql://postgres:5432/CarParts"
+tables_names = ['actor', 'address', 'category', 'city', 'country', 'customer', \
+               'film', 'film_actor', 'film_category', 'inventory', 'language', 'payment', 'rental', 'staff', 'store']
+
+postgres_url= "jdbc:postgresql://yb-master-n1:5433/dvdrental"
 
 expectations_helper(dataframe)
 
@@ -53,14 +54,14 @@ for table_name in tables_names:
     .format("jdbc") \
     .option("url", postgres_url) \
     .option("dbtable", table_name) \
-    .option("user", "root") \
-    .option("password", "root") \
+    .option("user", "postgres") \
+    .option("password", "") \
     .option("driver", "org.postgresql.Driver") \
     .load() \
     .write \
     .format("parquet")\
     .mode("overwrite")\
-    .save(f"s3a://new-wave-delta-lake-silver/bronze/CarPartsDB/{today}/{table_name}")
+    .save(f"s3a://new-wave-delta-lake-silver/bronze/dvdrentalDB/{today}/{table_name}")
     print(f"{table_name} table done!")
 
 

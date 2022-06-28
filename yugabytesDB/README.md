@@ -124,6 +124,11 @@ docker cp restore.sql yb-tserver-n1:/home/yugabyte/
 ```
 
 
+```
+docker cp restore.sql postgres:/
+```
+
+
 ```bash
 docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1
 ```

@@ -5,3 +5,4 @@ requests
 pandas
 great-expectations
 boto3
+psycopg2-binary
