@@ -1,0 +1,9 @@
+version: '2'
+services:
+  rpa:
+    image: rpa_selenium_image:latest
+    ports:
+      - 4444:4444
+      - 7900:7900
+    environment:
+      - shim-size=2g

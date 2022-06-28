@@ -1,0 +1,77 @@
+version: '2'
+
+services:
+  spark:
+    image: spark-air:latest
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      
+    ports:
+      - '8090:8080'
+  spark-worker:
+    image: spark-air:latest
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    environment:
+        - MINIO_ROOT_USER=admin
+        - MINIO_ROOT_PASSWORD=123456789
+
+    ports:
+        - "9001:9001"
+        - "9000:9000"
+    volumes:
+        - ./minio/data:/data
+    command: server /data --console-address ":9001" 
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+        interval: 30s
+        timeout: 30s
+        retries: 3
+  db:
+    image: postgres:14.2
+    container_name: postgres
+    restart: always
+    volumes:
+        - ./database-data:/var/lib/postgresql/data/
+    environment:
+        POSTGRES_USER: root
+        POSTGRES_PASSWORD: root
+        POSTGRES_DB: CarParts
+    ports:
+    - "5432:5432"
+    
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    ports:
+      - 3306:3306
+    environment:
+      USE_S3_STORAGE: 0
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_DATABASE: metastore_db

@@ -1,0 +1,5 @@
+delta-spark==1.0.1
+lxml
+python-decouple
+requests
+pandas

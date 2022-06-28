@@ -1,0 +1,12 @@
+version: '2'
+services:
+  database:
+    image: oracle/database:19.3.0-se2
+    volumes:
+      - /data:/opt/oracle/oradata # persistent oracle database data.
+    ports:
+      - 1521:1521
+      - 5500:5500
+    environment:
+      - ORACLE_PWD=My1passw
+      - ORACLE_PDB=ORCLPDB1
