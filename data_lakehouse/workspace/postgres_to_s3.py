@@ -17,7 +17,7 @@ AWS_BUCKET_NAME = config('AWS_BUCKET_NAME')
 
 spark = SparkSession \
     .builder \
-    .appName("DataExtraction") \
+    .appName("Bronze") \
     .getOrCreate() 
 
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
@@ -44,6 +44,7 @@ tables_names = ['Part_in_Order', 'Supplier', 'Brand', 'Part', 'Part_for_Car', 'P
 
 postgres_url= "jdbc:postgresql://postgres:5432/CarParts"
 
+expectations_helper(dataframe)
 
 for table_name in tables_names:
     print(f"{table_name} table transformation ...")
@@ -57,7 +58,7 @@ for table_name in tables_names:
     .option("driver", "org.postgresql.Driver") \
     .load() \
     .write \
-    .format("delta")\
+    .format("parquet")\
     .mode("overwrite")\
     .save(f"s3a://new-wave-delta-lake-silver/bronze/CarPartsDB/{today}/{table_name}")
     print(f"{table_name} table done!")

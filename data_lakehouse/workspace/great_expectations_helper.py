@@ -13,7 +13,7 @@ from great_expectations.data_context.types.base import (
 from pyspark.sql import SparkSession
 
 
-spark = SparkSession.builder.appName("Python Spark SQL basic example").config("spark.some.config.option", "some-value").getOrCreate()
+spark = SparkSession.builder.appName("Great Expectation").config("spark.some.config.option", "some-value").getOrCreate()
 Employee = spark.createDataFrame([('1', 'Joe', 70000, '1'),
                                   ('2', 'Henry', 80000, '2'),
                                   ('3', 'Sam', 60000, '2'),

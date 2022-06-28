@@ -123,26 +123,36 @@ docker cp restore.sql yb-tserver-n1:/home/yugabyte/ \
 docker cp restore.sql yb-tserver-n1:/home/yugabyte/ 
 ```
 
+
+```bash
+docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1
+```
+
+* Load the data into the database.
 ```bash
 \i restore.sql
 ```
 
 ```bash
-docker exec -it yb-tserver-n1 /home/yugabyte/bin/bash -h yb-tserver-n1
+docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1
 ```
 
 ```bash
 docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1 -U postgres -d dvdrental
 ```
 
+* List all the tables in the dvdrental database. 
 ```bash
 \dt
 ```
 
+
+* Check the actors table.
 ```bash
 SELECT * FROM public.actor;
 ```
 
+* Check all the Customers table.
 ```bash
 SELECT * FROM public.customer;
 ```
