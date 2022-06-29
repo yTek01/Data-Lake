@@ -48,6 +48,6 @@ silver_data = DockerOperator(
     dag=Spark_docker_dag
 )
 
+junction = DummyOperator(task_id="junction", dag=Spark_docker_dag)
 end = DummyOperator(task_id="end", dag=Spark_docker_dag)
-
-start >> bronze_data >> silver_data >> end
+start >> bronze_data >> junction >> silver_data >> end
