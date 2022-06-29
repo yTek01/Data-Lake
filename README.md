@@ -1,4 +1,4 @@
-# Delta-lake-ETL
+# Data-lake-ETL
 
 Here is the thing, I am going to build the all the Docker images, and then rum and provision the Docker containers needed for our deployments. Individual instructions are in each services (folder). 
 
