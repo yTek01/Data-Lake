@@ -12,9 +12,9 @@ RUN apt-get install -y unzip
 RUN unzip awscliv2.zip && rm awscliv2.zip
 RUN ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
 
-COPY ./workspace/postgres_to_s3.py /opt/bitnami/spark
-COPY ./workspace/silver_data.py /opt/bitnami/spark
-COPY ./workspace/great_expectations_helper.py /opt/bitnami/spark
+COPY ./data_lakehouse/workspace/postgres_to_s3.py /opt/bitnami/spark
+COPY ./data_lakehouse/workspace/silver_data.py /opt/bitnami/spark
+COPY ./data_lakehouse/workspace/great_expectations_helper.py /opt/bitnami/spark
 
-COPY ./requirements.txt /
+COPY ./data_lakehouse/requirements.txt /
 RUN pip install -r /requirements.txt

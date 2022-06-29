@@ -21,8 +21,8 @@ health_table = BeautifulSoup(driver.page_source, "html.parser")
 driver.quit()
 
 s3 = boto3.resource('s3',
-       aws_access_key_id = 'XXXXXXXXXXXXXXXXXXXXXXX',
-       aws_secret_access_key= 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+       aws_access_key_id = 'AKIATLEGUPNKMJLK7I7R',
+       aws_secret_access_key= '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',
        region_name = 'us-east-1')
 
 
