@@ -1,20 +1,52 @@
-FROM bitnami/spark:3
+FROM openjdk:11.0.11-jre-slim-buster as builder
 
-USER root
-RUN curl https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.231/aws-java-sdk-bundle-1.12.231.jar --output /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.231.jar
-RUN curl https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.1/hadoop-aws-3.3.1.jar --output /opt/bitnami/spark/jars/hadoop-aws-3.3.1.jar
-RUN curl https://repo1.maven.org/maven2/net/java/dev/jets3t/jets3t/0.9.4/jets3t-0.9.4.jar --output /opt/bitnami/spark/jars/jets3t-0.9.4.jar
-RUN curl https://jdbc.postgresql.org/download/postgresql-42.3.5.jar --output /opt/bitnami/spark/jars/postgresql-42.3.5.jar
+# Add Dependencies for PySpark
+RUN apt-get update && apt-get install -y curl vim wget software-properties-common ssh net-tools ca-certificates python3 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y unzip
-RUN unzip awscliv2.zip && rm awscliv2.zip
-RUN ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
+COPY ./requirements.txt /
+RUN python3 -m pip install -r /requirements.txt
 
-COPY ./data_lakehouse/workspace/bronze_data_to_s3.py /opt/bitnami/spark
-COPY ./data_lakehouse/workspace/silver_data.py /opt/bitnami/spark
-COPY ./data_lakehouse/workspace/great_expectations_helper.py /opt/bitnami/spark
+RUN update-alternatives --install "/usr/bin/python" "python" "$(which python3)" 1
 
-COPY ./data_lakehouse/requirements.txt /
-RUN pip install -r /requirements.txt
+# Fix the value of PYTHONHASHSEED
+# Note: this is needed when you use Python 3.3 or greater
+ENV SPARK_VERSION=3.1.1 \
+HADOOP_VERSION=3.2 \
+SPARK_HOME=/opt/spark \
+PYTHONHASHSEED=1
+
+RUN wget --no-verbose -O apache-spark.tgz "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
+&& mkdir -p /opt/spark \
+&& tar -xf apache-spark.tgz -C /opt/spark --strip-components=1 \
+&& rm apache-spark.tgz
+
+
+FROM builder as apache-spark
+
+WORKDIR /opt/spark
+
+ENV SPARK_MASTER_PORT=7077 \
+SPARK_MASTER_WEBUI_PORT=8080 \
+SPARK_LOG_DIR=/opt/spark/logs \
+SPARK_MASTER_LOG=/opt/spark/logs/spark-master.out \
+SPARK_WORKER_LOG=/opt/spark/logs/spark-worker.out \
+SPARK_WORKER_WEBUI_PORT=8080 \
+SPARK_WORKER_PORT=7000 \
+SPARK_MASTER="spark://spark-master:7077" \
+SPARK_WORKLOAD="master"
+
+EXPOSE 8080 7077 7000
+
+RUN mkdir -p $SPARK_LOG_DIR && \
+touch $SPARK_MASTER_LOG && \
+touch $SPARK_WORKER_LOG && \
+ln -sf /dev/stdout $SPARK_MASTER_LOG && \
+ln -sf /dev/stdout $SPARK_WORKER_LOG
+
+
+
+ENV PATH /opt/spark/bin:/opt/spark/sbin:$PATH
+
+COPY start-spark.sh /
+
+CMD ["/bin/bash", "/start-spark.sh"]
