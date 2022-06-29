@@ -35,8 +35,8 @@ spark = SparkSession.builder \
 
 spark.sparkContext.setLogLevel("ERROR")
 
-tables_names = ['Part_in_Order', 'Supplier', 'Brand', 'Part', 'Part_for_Car', 'Part_Supplier', \
-               'Customer', 'Customer_Statut', 'Orders', 'Car_Manufacturer', 'Car', 'Part_Maker']
+tables_names = ['actor', 'address', 'category', 'city', 'country', 'customer', \
+               'film', 'film_actor', 'film_category', 'inventory', 'language', 'payment', 'rental', 'staff', 'store']
 
 postgres_url= f"jdbc:postgresql://{POSTGRES_ENDPOINT}/{POSTGRES_DB}"
 
@@ -48,11 +48,11 @@ for table_name in tables_names:
     .option("url", postgres_url) \
     .option("dbtable", table_name) \
     .option("user", POSTGRES_USER) \
-    .option("password", POSTGRES_PASSWORD) \
+    .option("password", "") \
     .option("driver", "org.postgresql.Driver") \
     .load() \
     .write \
     .format("delta")\
     .mode("overwrite")\
-    .save(f"s3a://{AWS_BUCKET_NAME}/bronze/CarPartsDB/{today}/{table_name}")
+    .save(f"s3a://{AWS_BUCKET_NAME}/bronze/dvdrentalDB_delta/{today}/{table_name}")
     print(f"{table_name} table done!")
