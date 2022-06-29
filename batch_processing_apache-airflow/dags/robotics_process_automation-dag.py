@@ -1,6 +1,7 @@
 import airflow
 from datetime import timedelta
 from airflow import DAG
+from airflow.operators.dummy import DummyOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator 
 from airflow.utils.dates import days_ago
@@ -19,6 +20,8 @@ rpa_dag = DAG(
         start_date = airflow.utils.dates.days_ago(1)
 )
 
+start = DummyOperator(task_id="start", dag=rpa_dag)
+
 rpa_operator = DockerOperator(
     task_id='RPA_docker_runner',
     container_name='robotics_automation',
@@ -32,4 +35,6 @@ rpa_operator = DockerOperator(
     dag=rpa_dag
 )
 
-rpa_operator
+end = DummyOperator(task_id="end", dag=rpa_dag)
+
+start >> rpa_operator >> end
