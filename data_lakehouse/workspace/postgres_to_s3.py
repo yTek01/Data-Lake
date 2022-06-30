@@ -27,11 +27,11 @@ spark = SparkSession.builder \
     .config('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')\
     .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")\
-    .config("spark.unsafe.sorter.spill.read.ahead.enabled", "false")\
+    .config('spark.jars','/opt/spark/jars/delta-core_2.12-1.0.1.jar')\
     .config('spark.jars','/opt/spark/jars/aws-java-sdk-bundle-1.11.375.jar')\
     .config('spark.jars','/opt/spark/jars/hadoop-aws-3.2.0.jar')\
-    .config('spark.jars','/opt/spark/jars/delta-core_2.12-1.0.1.jar')\
     .config('spark.jars','/opt/spark/jars/postgresql-42.3.5.jar')\
+    .enableHiveSupport()\
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
@@ -44,15 +44,18 @@ postgres_url= f"jdbc:postgresql://{POSTGRES_ENDPOINT}/{POSTGRES_DB}"
 for table_name in tables_names:
     print(f"{table_name} table transformation ...")
 
-    spark.read \
+    dataframe = spark.read \
     .format("jdbc") \
     .option("url", postgres_url) \
     .option("dbtable", table_name) \
     .option("user", POSTGRES_USER) \
     .option("password", "") \
     .option("driver", "org.postgresql.Driver") \
-    .load() \
-    .write \
+    .load()
+    
+    dataframe.show()
+
+    dataframe.write \
     .format("delta")\
     .mode("overwrite")\
     .save(f"s3a://{AWS_BUCKET_NAME}/bronze/dvdrentalDB_delta/{today}/{table_name}")
