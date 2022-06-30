@@ -22,3 +22,19 @@ docker build -f RPA/Dockerfile.RPA . -t rpa_selenium_image
 ```BASH
 docker-compose -f data_lakehouse/docker-compose.Lakehouse.yaml -f yugabytesDB/docker-compose.Yugabyte.yaml -f lakefs/docker-compose.LakeFS.yaml -f batch_processing_apache-airflow/docker-compose.Airflow.yaml -f RPA/docker-compose.RPA.yaml up -d
 ```
+
+
+
+
+
+
+
+Apache Spark and YugabytesDB
+
+```
+
+```
+
+```BASH
+docker-compose -f data_lakehouse/docker-compose.Lakehouse.yaml -f yugabytesDB/docker-compose.Yugabyte.yaml up -d
+```

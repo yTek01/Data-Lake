@@ -3,14 +3,29 @@
 
 * Navigate to the ./data_lakehouse directory and execute the command below.
 
+Taging for Spark 
 ```BASH
-docker build -f Dockerfile.Spark . -t spark-air
+docker build -f data_lakehouse/Dockerfile.Spark . -t cluster-apache-spark:3.1.1
 ```
+
 
 * Now start the Lakehouse containers
 ```BASH
 docker-compose -f docker-compose.Lakehouse.yaml up -d
 ```
+
+```BASH
+docker exec -it master bash /opt/workspace/dependencies/packages_installer.sh 
+```
+
+```
+docker exec -it master spark-submit --master spark://master:7077 /opt/workspace/postgres_to_s3.py
+```
+
+
+
+
+
 
 * Go to https://9001-devilisdefe-deltalakeet-1na534igs3o.ws-eu47.gitpod.io/login to check that MinIO is running. Login is provided below.
 
