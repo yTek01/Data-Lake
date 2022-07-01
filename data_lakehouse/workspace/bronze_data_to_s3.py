@@ -26,6 +26,8 @@ hadoop_conf.set("fs.s3a.secret.key", "KA+JHILXWWIC1Be3b71zg5BDn5WRzGc87/C7jZUk")
 hadoop_conf.set("fs.s3a.endpoint", "s3.amazonaws.com")
 hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
 hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
+hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
 response = requests.get("https://api.mfapi.in/mf/118550")
 data = response.text
@@ -50,7 +52,7 @@ postgres_url= "jdbc:postgresql://yb-tserver-n1:5433/dvdrental"
 for table_name in tables_names:
     print(f"{table_name} table transformation ...")
 
-    spark.read \
+    dataframe = spark.read \
     .format("jdbc") \
     .option("url", postgres_url) \
     .option("dbtable", table_name) \
@@ -58,10 +60,13 @@ for table_name in tables_names:
     .option("password", "") \
     .option("driver", "org.postgresql.Driver") \
     .load() \
-    .write \
+
+    dataframe.show()
+
+    dataframe.write \
     .format("parquet")\
     .mode("overwrite")\
-    .save(f"s3a://new-wave-delta-lake-silver/bronze/dvdrentalDB/{today}/{table_name}")
+    .save(f"s3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/{table_name}")
     print(f"{table_name} table done!")
 
 
@@ -71,6 +76,6 @@ for table_name in tables_names:
     dataframe.write \
     .format("parquet")\
     .mode("overwrite")\
-    .save(f"s3a://new-wave-delta-lake/bronze/CarPartsDB/{today}/{table_name}")
+    .save(f"s3a://new-wave-delta-lake/bronze/dvdrentalDB_delta/{today}/{table_name}")
     # dataframe.write.parquet('s3a://sparkjobresult/output',mode='overwrite')
     # dataframe.write.format('csv').option('header','true').save('s3a://sparkjobresult/output',mode='overwrite')

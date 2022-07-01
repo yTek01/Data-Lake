@@ -1,4 +1,4 @@
-delta-spark==1.0.1
+delta-spark==1.1.0
 lxml
 python-decouple
 requests
