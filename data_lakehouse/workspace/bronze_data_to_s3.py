@@ -64,7 +64,7 @@ for table_name in tables_names:
     dataframe.show()
 
     dataframe.write \
-    .format("parquet")\
+    .format("delta")\
     .mode("overwrite")\
     .save(f"s3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/{table_name}")
     print(f"{table_name} table done!")
@@ -74,7 +74,7 @@ for table_name in tables_names:
     # NOTE This line requires Java 8 instead of Java 11 work it to work on Airflow
     # We are saving locally for now.
     dataframe.write \
-    .format("parquet")\
+    .format("delta")\
     .mode("overwrite")\
     .save(f"s3a://new-wave-delta-lake/bronze/dvdrentalDB_delta/{today}/{table_name}")
     # dataframe.write.parquet('s3a://sparkjobresult/output',mode='overwrite')
