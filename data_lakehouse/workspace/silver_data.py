@@ -24,56 +24,57 @@ hadoop_conf.set("fs.s3a.secret.key", "KA+JHILXWWIC1Be3b71zg5BDn5WRzGc87/C7jZUk")
 hadoop_conf.set("fs.s3a.endpoint", "s3.amazonaws.com")
 hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
 hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
 hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
 spark.sparkContext.setLogLevel("ERROR")
-spark.sql("CREATE DATABASE IF NOT EXISTS dwh COMMENT 'Data Warehouse for dvdrental'")
-
+spark.sql("CREATE DATABASE IF NOT EXISTS Database COMMENT 'Data Warehouse for dvdrental'")
+spark.sql("USE Database")
 
 # Reading tables from landing area
 print('\nReading ...')
-actor = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/actor')
-address = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/address')
-category = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/category')
-city = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/city')
-country = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/country')
-customer = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/customer')
-film = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/film')
-film_actor = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/film_actor')
-film_category = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/film_category')
-inventory = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/inventory')
-language = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/language')
-payment = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/payment')
-rental = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/rental')
-staff = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/staff')
-store = spark.read.format("parquet").load(f's3a://new-wave-delta-lake/bronze/dvdrentalDB/{today}/store')
+actor = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/actor')
+# address = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/address')
+# category = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/category')
+# city = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/city')
+# country = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/country')
+# customer = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/customer')
+# film = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/film')
+# film_actor = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/film_actor')
+# film_category = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/film_category')
+# inventory = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/inventory')
+# language = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/language')
+# payment = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/payment')
+# rental = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/rental')
+# staff = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/staff')
+# store = spark.read.format("delta").load(f's3a://new-wave-delta-lake-silver/bronze/dvdrentalDB_delta/{today}/store')
 
 
 print('End of reading... \n')
 
 # transforming tables to a set of dimensionel tables
 print('\ntransforming ...')
-actor.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Actor').saveAsTable("dwh.Dim.Actor")
-address.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Address').saveAsTable("dwh.Dim.Address")
-category.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Category').saveAsTable("dwh.Dim.Category")
-city.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_City').saveAsTable("dwh.Dim.City")
-country.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Country').saveAsTable("dwh.Dim.Country")
-film.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film').saveAsTable("dwh.Dim.Film")
-film_actor.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film_actor').saveAsTable("dwh.Dim.Film_actor")
-film_category.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film_category').saveAsTable("dwh.Dim.Film_category")
-inventory.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Inventory').saveAsTable("dwh.Dim.Inventory")
-language.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Language').saveAsTable("dwh.Dim.Language")
-payment.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Payment').saveAsTable("dwh.Dim.Payment")
-rental.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Rental').saveAsTable("dwh.Dim.Rental")
-staff.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Staff').saveAsTable("dwh.Dim.Staff")
-store.write.format('parquet').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Store').saveAsTable("dwh.Dim.Store")
+actor.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Actor').saveAsTable("DimActor")
+print('\n Done!!! \n')
+# address.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Address').saveAsTable("dwh.DimAddress")
+# category.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Category').saveAsTable("dwh.DimCategory")
+# city.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_City').saveAsTable("dwh.DimCity")
+# country.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Country').saveAsTable("dwh.DimCountry")
+# film.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film').saveAsTable("dwh.DimFilm")
+# film_actor.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film_actor').saveAsTable("dwh.DimFilm_actor")
+# film_category.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Film_category').saveAsTable("dwh.DimFilm_category")
+# inventory.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Inventory').saveAsTable("dwh.DimInventory")
+# language.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Language').saveAsTable("dwh.DimLanguage")
+# payment.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Payment').saveAsTable("dwh.DimPayment")
+# rental.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Rental').saveAsTable("dwh.DimRental")
+# staff.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Staff').saveAsTable("dwh.DimStaff")
+# store.write.format('delta').mode('overwrite').option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Dim_Store').saveAsTable("dwh.DimStore")
 
-payment.join(rental, 'customer_id') \
-    .join(customer,'customer_id')\
-    .join(address, 'address_id')\
-    .join(city, 'city_id')\
-    .join(country, 'country_id')\
-    .write.format('parquet').mode('overwrite')\
-    .option('path','s3a://datalake/silver/warehouse/dvdrental/Fact_part_in_Order').saveAsTable("dwh.FactPartInOrder")
-print('End Of Transforming')
+# payment.join(rental, 'customer_id') \
+#     .join(customer,'customer_id')\
+#     .join(address, 'address_id')\
+#     .join(city, 'city_id')\
+#     .join(country, 'country_id')\
+#     .write.format('delta').mode('overwrite')\
+#     .option('path','s3a://new-wave-delta-lake-silver/silver/warehouse/dvdrental/Fact_part_in_Order').saveAsTable("dwh.FactPartInOrder")
+# print('End Of Transforming')
