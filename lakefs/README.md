@@ -32,15 +32,17 @@ tar -xf lakeFS_0.68.0_Linux_x86_64.tar.gz
 mv lakectl /usr/local/bin
 ```
 
-* List the available repository.
-```bash
-lakectl repo list
-```
 
 ### Configure the LakeFS CLI 
 * Now configure the LakeFS CLI with your AWS credentials.
 ```bash
 lakectl config
+```
+
+
+* List the available repository.
+```bash
+lakectl repo list
 ```
 
 * Use the LakeFS credentail you downloaded when you sign up to configure the CLI. 
