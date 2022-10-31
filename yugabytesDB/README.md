@@ -134,7 +134,7 @@ docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1
 
 * Load the data into the database.
 ```bash
-\i restore.sql
+\i postgres_resources.sql
 ```
 
 ```bash
@@ -147,7 +147,7 @@ docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1 -U post
 
 * List all the tables in the dvdrental database. 
 ```bash
-\dt
+\dt *.*
 ```
 
 

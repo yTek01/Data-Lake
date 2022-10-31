@@ -6,7 +6,6 @@ from pyspark.sql import functions as F
 from decouple import config
 from datetime import date
 from delta import *
-from great_expectations_helper import expectations_helper
 
 today = date.today().strftime("%b-%d-%Y")
 
@@ -17,7 +16,7 @@ AWS_BUCKET_NAME = config('AWS_BUCKET_NAME')
 
 spark = SparkSession \
     .builder \
-    .appName("Bronze") \
+    .appName("Data2bot_Assessment") \
     .getOrCreate()
 
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
@@ -29,10 +28,42 @@ hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
 hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
-orders = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/orders.csv")
-orders.printSchema()
-orders.show()
+file_type = "csv"
+infer_schema = "false"
+first_row_is_header = "true"
+delimiter = ","
 
+order_df = spark.read.format(file_type).option("inferSchema", infer_schema) \
+                .option("header", first_row_is_header) \
+                .option("sep", delimiter) \
+                .load("s3a://d2b-internal-assessment-bucket-assessment/orders_data/orders.csv")
+display(order_df)
+
+# orders = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/orders.csv") \
+#                     .option("inferSchema", infer_schema) \
+#                     .option("header", first_row_is_header) \
+#                     .option("sep", delimiter) 
+
+
+# reviews = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/reviews.csv")
+# shipments_deliveries = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/shipments_deliveries.csv")
+
+# orders.show()
+# # reviews.show()
+# # shipments_deliveries.show()
+
+
+# file_location = "/mnt/d2b-internal-assessment-bucket-assessment/orders_data/warehouse/orders/"
+
+
+
+
+# order_df = spark.read.format(file_type).option("inferSchema", infer_schema) \
+#   .option("header", first_row_is_header) \
+#   .option("sep", delimiter) \
+#   .load(file_location)
+
+# display(order_df)
 
 
 
