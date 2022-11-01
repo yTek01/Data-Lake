@@ -2,10 +2,21 @@ import requests
 import json
 from pyspark.sql import SparkSession
 from pyspark import SQLContext
+from pyspark.sql.functions import dayofmonth
+from pyspark.sql.functions import to_date
+from pyspark.sql.functions import dayofweek
+from pyspark.sql.functions import col
+from pyspark.sql.functions import *
+from pyspark.sql.functions import lit
 from pyspark.sql import functions as F
+from pyspark.sql.functions import year
+from pyspark.sql.functions import month
+
+
 from decouple import config
 from datetime import date
 from delta import *
+import psycopg2
 
 today = date.today().strftime("%b-%d-%Y")
 
@@ -23,6 +34,8 @@ file_type = "csv"
 infer_schema = "false"
 first_row_is_header = "true"
 delimiter = ","
+month_list = []
+
 
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
 hadoop_conf.set("fs.s3a.access.key", "AKIA5NLUPFOOEVX3VZP6")
@@ -33,31 +46,186 @@ hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
 hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
-tables = ["orders", "reviews", "shipment_deliveries"]
 postgres_url= "jdbc:postgresql://yb-tserver-n1:5433/Postgres" #"jdbc:postgresql://yb-tserver-n1:5433/Postgres"
 postgres_schema = "1841_staging"
 
-for table in tables:
-    print(f" Loading {table} from S3 bucket ...")
-    data = spark.read.format(file_type).option("inferSchema", infer_schema) \
-                    .option("header", first_row_is_header) \
-                    .option("sep", delimiter) \
-                    .load(f"s3a://d2b-internal-assessment-bucket-assessment/orders_data/{table}.csv")
+conn = psycopg2.connect("host=yb-tserver-n1 port=5433 dbname=Postgres user=postgres password=")
+conn.set_session(autocommit=True)
+cur = conn.cursor()
+
+order_table = spark.read.format(file_type).option("inferSchema", infer_schema) \
+                .option("header", first_row_is_header) \
+                .option("sep", delimiter) \
+                .load(f"s3a://d2b-internal-assessment-bucket-assessment/orders_data/orders.csv")
+
+reviews_table = spark.read.format(file_type).option("inferSchema", infer_schema) \
+                .option("header", first_row_is_header) \
+                .option("sep", delimiter) \
+                .load(f"s3a://d2b-internal-assessment-bucket-assessment/orders_data/reviews.csv")
+
+shipment_deliveries_table = spark.read.format(file_type).option("inferSchema", infer_schema) \
+                .option("header", first_row_is_header) \
+                .option("sep", delimiter) \
+                .load(f"s3a://d2b-internal-assessment-bucket-assessment/orders_data/shipment_deliveries.csv")
+
+
+conn.set_session(autocommit=False)
+cur = conn.cursor()
+for i in order_table.collect():
+    cur.execute("""INSERT INTO "1841_staging"."orders" (order_id, customer_id, order_date, product_id, unit_price, quantity, amount) VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            (i["order_id"], i["customer_id"], i["order_date"], i["product_id"], i["unit_price"], i["quantity"], i["total_price"]))
+print("Done with order_table!")   
+
+for i in reviews_table.collect():
+    cur.execute("""INSERT INTO "1841_staging"."reviews" (product_id, review) VALUES (%s, %s)""",
+            (i["product_id"], i["review"]))
+print("Done with reviews_table!")
+
+for i in shipment_deliveries_table.collect():
+    cur.execute("""INSERT INTO "1841_staging"."shipments_deliveries" (shipment_id, order_id, shipment_date, delivery_date) VALUES (%s, %s, %s, %s)""",
+            (i["shipment_id"], i["order_id"], i["shipment_date"], i["delivery_date"]))
+print("Done with shipment_deliveries_table!")   
+
+Fact_table = reviews_table.join(order_table, 'product_id') \
+                      .join(shipment_deliveries_table, 'order_id') \
+                      .drop_duplicates()
+
+total_order = Fact_table.withColumn('day_of_month',dayofmonth(Fact_table.order_date)) \
+                                  .withColumn('day_of_week',dayofweek(Fact_table.order_date)) \
+                                  .withColumn("working_day",F.when(F.col("day_of_week") < 6, True).otherwise(False)) \
+                                  .withColumn('year_num',year(Fact_table.order_date)) \
+                                  .withColumn('month_of_the_year_num',month(Fact_table.order_date)) \
+                                  .select("total_price","quantity", "day_of_month", "day_of_week", "working_day", "year_num", "month_of_the_year_num", "year_num") 
+
+total_order = total_order.filter(total_order.working_day != "true")
+expr = [F.sum(F.col("quantity")).alias("total_order"),
+        F.max(F.col("total_price")).alias("total_prices")]
+agg_public_holiday = total_order.groupBy(["month_of_the_year_num"]).agg(*expr) \
+                                .orderBy(col("month_of_the_year_num").asc()) 
+
+for i in range(1, 13):
+    data = agg_public_holiday.where(col('month_of_the_year_num')==str(i)).select('total_order').collect()[0].total_order
+    month_list.append(data)
+
+agg_public_holiday = spark.createDataFrame([tuple(month_list)], ["tt_order_hol_jan", "tt_order_hol_feb", "tt_order_hol_mar",
+                                                                "tt_order_hol_apr", "tt_order_hol_may", "tt_order_hol_jun", 
+                                                                "tt_order_hol_jul", "tt_order_hol_aug", "tt_order_hol_sep", 
+                                                                "tt_order_hol_oct", "tt_order_hol_nov", "tt_order_hol_dec"])
+agg_public_holiday = agg_public_holiday.withColumn("ingestion_date",current_date())
+
+
+
+for i in agg_public_holiday.collect():
+    cur.execute("""INSERT INTO "1841_analytics"."agg_public_holiday" (ingestion_date, tt_order_hol_jan, tt_order_hol_feb, tt_order_hol_mar, tt_order_hol_apr, tt_order_hol_may, tt_order_hol_jun, tt_order_hol_jul, tt_order_hol_aug, tt_order_hol_sep, tt_order_hol_oct, tt_order_hol_nov, tt_order_hol_dec ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (i["ingestion_date"], i["tt_order_hol_jan"], i["tt_order_hol_feb"], i["tt_order_hol_mar"], i["tt_order_hol_apr"], i["tt_order_hol_may"], i["tt_order_hol_jun"],i["tt_order_hol_jul"],i["tt_order_hol_aug"],i["tt_order_hol_sep"], i["tt_order_hol_oct"], i["tt_order_hol_nov"] , i["tt_order_hol_dec"]  ))
+print("Done with agg_public_holiday!")  
+
+
+shipment_details = Fact_table.withColumn("dateDiff", datediff(Fact_table.shipment_date, Fact_table.order_date))
+shipment_details = shipment_details.withColumn("late_shipments", F.when((F.col("dateDiff") >= 6) & (F.col("delivery_date").isNull()), \
+                                            1) \
+                                            .otherwise(0))
+#Scaffolding
+shipment_details = shipment_details.withColumn("current_date", lit("2022-09-05")) \
+                                   .withColumn("ingestion_date",current_date())           
+shipment_details = shipment_details.withColumn("days_left", datediff(shipment_details.current_date, shipment_details.order_date)) 
+shipment_details = shipment_details.withColumn("undelivered_shipments", F.when((F.col("delivery_date").isNull()) & \
+                                                                    (F.col("shipment_date").isNull()) & \
+                                                                    (F.col("days_left")>15),1) \
+                                                                    .otherwise(0))
+
+undelivered = shipment_details.select("ingestion_date", "order_date", "undelivered_shipments","delivery_date", "late_shipments", "shipment_date", "quantity")
+
+undelivered.createOrReplaceTempView("undeliveredOrders")
+undelivered_orders = spark.sql("SELECT ingestion_date, SUM(undelivered_shipments) OVER () AS tt_undelivered_items, SUM(late_shipments) OVER () AS tt_late_shipments FROM undeliveredOrders LIMIT 1")
+undelivered_orders.show()
+
+
+for i in undelivered_orders.collect():
+    cur.execute("""INSERT INTO "1841_analytics"."agg_shipments" (ingestion_date, tt_late_shipments, tt_undelivered_items) VALUES (%s, %s, %s)""",
+            (i["ingestion_date"], i["tt_late_shipments"], i["tt_undelivered_items"] ))
+
+print("Done with undelivered_orders!!!")  
+
+
+landing = Fact_table.withColumn('day_of_month',dayofmonth(Fact_table.order_date)) \
+                                  .withColumn('day_of_week',dayofweek(Fact_table.order_date)) \
+                                  .withColumn("is_public_holiday",F.when(F.col("day_of_week") > 5, True).otherwise(False)) \
+                                  .withColumn('year_num',year(Fact_table.order_date)) \
+                                  .withColumn('month_of_the_year_num',month(Fact_table.order_date)) 
+
+
+
+
+conn.commit()
+cur.close()
+conn.close()
+
+
+
+
+
+#     for row in data:
+#         data[row] 
+#     data.show()
+#     print(f" Loading {table} to Postgres Database ...")
+
+#     data.write \
+#     .format("jdbc") \
+#     .option("url", postgres_url) \
+#     .option("dbtable", f"1841_staging.{table}") \
+#     .option("user", "postgres") \
+#     .option("password", "") \
+#     .option("driver", "org.postgresql.Driver") \
+#     .mode("overwrite") \
+#     .save()
+
+#     print(f"DONE WRITING {table}")
+
+# conn.set_session(autocommit=False)
+# cur = conn.cursor()
+
+
+# cur.execute("INSERT INTO 1841_staging.orders (order_id, customer_id,order_date,product_id,unit_price,quantity,amount) VALUES (%s, %s, %s, %s)",
+#             (1, 'John', 35, 'Python'))
+
+
+# print("Inserted (id, name, age, language) = (1, 'John', 35, 'Python')")
+
+
+
+
+# cur.execute("SELECT name, age, language FROM employee WHERE id = 1")
+# row = cur.fetchone()
+# print("Query returned: %s, %s, %s" % (row[0], row[1], row[2]))
+# # Commit and close down.
+# conn.commit()
+# cur.close()
+# conn.close()
+
+# print("Done!!!")
+
+# for table in tables:
+#     print(f" Loading {table} from S3 bucket ...")
+#     data = spark.read.format(file_type).option("inferSchema", infer_schema) \
+#                     .option("header", first_row_is_header) \
+#                     .option("sep", delimiter) \
+#                     .load(f"s3a://d2b-internal-assessment-bucket-assessment/orders_data/{table}.csv")
     
-    data.show()
-    print(f" Loading {table} to Postgres Database ...")
+#     data.show()
+#     print(f" Loading {table} to Postgres Database ...")
 
-    data.write \
-    .format("jdbc") \
-    .option("url", postgres_url) \
-    .option("dbtable", f"1841_staging.{table}") \
-    .option("user", "postgres") \
-    .option("password", "") \
-    .option("driver", "org.postgresql.Driver") \
-    .mode("overwrite") \
-    .save() 
+#     data.write \
+#     .format("jdbc") \
+#     .option("url", postgres_url) \
+#     .option("dbtable", f"1841_staging.{table}") \
+#     .option("user", "postgres") \
+#     .option("password", "") \
+#     .option("driver", "org.postgresql.Driver") \
+#     .mode("overwrite") \
+#     .save() 
 
-    print(f"DONE WRITING {table}")
+#     print(f"DONE WRITING {table}")
 
 
 # df.write \

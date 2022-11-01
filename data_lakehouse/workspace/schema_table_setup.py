@@ -1,0 +1,145 @@
+import psycopg2
+
+HOST = "yb-tserver-n1"
+DATABASE = "Postgres"
+PORT = "5433"
+
+conn = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user=postgres password=")
+conn.set_session(autocommit=True)
+cur = conn.cursor()
+
+cur.execute(
+  """
+  DROP TABLE IF EXISTS 1841_staging.orders
+  """)
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "1841_staging"."orders" (
+        "order_id" integer NOT NULL,
+        "customer_id" integer NOT NULL,
+        "order_date" date NOT NULL,
+        "product_id" varchar(40) NOT NULL,
+        "unit_price" integer NOT NULL,
+        "quantity" integer NOT NULL,
+        "amount" integer NOT NULL)
+  """) 
+print("Created table 1841_staging.orders")
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "1841_staging"."reviews" (
+        "product_id" integer NOT NULL,
+        "review" integer NOT NULL)
+  """)
+print("Created table 1841_staging.reviews")
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "1841_staging"."shipments_deliveries" (
+        "shipment_id" integer NOT NULL,
+        "order_id" integer NOT NULL,
+        "shipment_date" date NULL,
+        "delivery_date" date NULL)
+  """)
+print("Created table 1841_staging.shipments_deliveries")
+
+
+cur.execute(
+  """
+    CREATE SCHEMA IF NOT EXISTS "if_common"
+  """)
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "if_common"."dim_addresses" (
+        "postal_code" integer NOT NULL PRIMARY KEY,
+        "country" varchar(40) NOT NULL,
+        "region" varchar(40) NOT NULL, 
+        "state" varchar(40) NOT NULL,
+        "address" varchar(50) NOT NULL)
+  """)
+print("Created table if_common.dim_addresses")
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "if_common"."dim_products" (
+    "product_id" integer NOT NULL PRIMARY KEY,
+    "product_category" varchar(40) NOT NULL,
+    "product_name" varchar(40) NOT NULL)
+  """)
+print("Created table if_common.dim_products")
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "if_common"."dim_dates" (
+        "calendar_dt" date NOT NULL PRIMARY KEY,
+        "year_num" integer NOT NULL,
+        "month_of_the_year_num" integer NOT NULL,
+        "day_of_the_month_num" integer NOT NULL,
+        "day_of_the_week_num" integer NOT NULL,
+        "Working_day" boolean NOT NULL)
+  """)
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "if_common"."dim_customers" (
+        "customer_id" integer NOT NULL PRIMARY KEY,
+        "customer_name" varchar(40) NOT NULL,
+        "postal_code" integer NOT NULL REFERENCES "if_common"."dim_addresses"(postal_code))
+  """)
+
+print("Created table if_common.dim_customers")
+
+cur.execute(
+  """
+    CREATE SCHEMA IF NOT EXISTS "1841_analytics"
+  """)
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_public_holiday" (
+        "ingestion_date" date NOT NULL PRIMARY KEY,
+        "tt_order_hol_jan" integer NOT NULL,
+        "tt_order_hol_feb" integer NOT NULL,
+        "tt_order_hol_mar" integer NOT NULL,
+        "tt_order_hol_apr" integer NOT NULL,
+        "tt_order_hol_may" integer NOT NULL,
+        "tt_order_hol_jun" integer NOT NULL,
+        "tt_order_hol_jul" integer NOT NULL,
+        "tt_order_hol_aug" integer NOT NULL,
+        "tt_order_hol_sep" integer NOT NULL,
+        "tt_order_hol_oct" integer NOT NULL,
+        "tt_order_hol_nov" integer NOT NULL,
+        "tt_order_hol_dec" integer NOT NULL)
+  """)
+print("Created table 1841_analytics.agg_public_holiday")
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_shipments" (
+        "ingestion_date" date NOT NULL PRIMARY KEY, 
+        "tt_late_shipments" integer NOT NULL, 
+        "tt_undelivered_items" integer NOT NULL)
+  """)
+print("Created table 1841_analytics.agg_shipments")
+
+cur.execute(
+  """
+    CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
+        "ingestion_date" date NOT NULL PRIMARY KEY, 
+        "product_name" integer NOT NULL, 
+        "most_ordered_day" integer NOT NULL, 
+        "is_public_holiday" boolean NOT NULL, 
+        "tt_review_points" integer NOT NULL,
+        "pct_one_star_review" decimal NOT NULL,
+        "pct_two_star_review" decimal NOT NULL,
+        "pct_three_star_review" decimal NOT NULL,
+        "pct_four_star_review" decimal NOT NULL,
+        "pct_five_star_review" decimal NOT NULL,
+        "pct_early_shipments" decimal NOT NULL,
+        "pct_late_review" decimal NOT NULL)
+  """)
+print("Created table 1841_analytics.best_performing_product")
+
+cur.close()
