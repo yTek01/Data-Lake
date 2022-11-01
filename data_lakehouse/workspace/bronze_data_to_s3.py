@@ -135,7 +135,6 @@ shipment_details = shipment_details.withColumn("undelivered_shipments", F.when((
                                                                     .otherwise(0))
 
 undelivered = shipment_details.select("ingestion_date", "order_date", "undelivered_shipments","delivery_date", "late_shipments", "shipment_date", "quantity")
-
 undelivered.createOrReplaceTempView("undeliveredOrders")
 undelivered_orders = spark.sql("SELECT ingestion_date, SUM(undelivered_shipments) OVER () AS tt_undelivered_items, SUM(late_shipments) OVER () AS tt_late_shipments FROM undeliveredOrders LIMIT 1")
 undelivered_orders.show()
@@ -149,10 +148,54 @@ print("Done with undelivered_orders!!!")
 
 
 landing = Fact_table.withColumn('day_of_month',dayofmonth(Fact_table.order_date)) \
-                                  .withColumn('day_of_week',dayofweek(Fact_table.order_date)) \
-                                  .withColumn("is_public_holiday",F.when(F.col("day_of_week") > 5, True).otherwise(False)) \
-                                  .withColumn('year_num',year(Fact_table.order_date)) \
-                                  .withColumn('month_of_the_year_num',month(Fact_table.order_date)) 
+                                .withColumn('day_of_week',dayofweek(Fact_table.order_date)) \
+                                .withColumn("is_public_holiday",F.when(F.col("day_of_week") > 5, True).otherwise(False)) \
+                                .withColumn('year_num',year(Fact_table.order_date)) \
+                                .withColumn('month_of_the_year_num',month(Fact_table.order_date)) 
+
+
+shipment_details = landing.withColumn("dateDiff", datediff(landing.shipment_date, landing.order_date)) \
+                            .withColumn("ingestion_date",current_date())
+shipment_details = shipment_details.withColumn("late_shipments", F.when((F.col("dateDiff") >= 6) & (F.col("delivery_date").isNull()), \
+                                        shipment_details.dateDiff) \
+                                        .otherwise(shipment_details.dateDiff))
+Undelivered_shipments = shipment_details.withColumn("undelivered_shipments", F.when((F.col("delivery_date").isNull()) & \
+                                                                    (F.col("shipment_date").isNull()) & \
+                                                                    (F.col("dateDiff")>15),1) \
+                                                                    .otherwise(0))
+
+Undelivered_shipments.createOrReplaceTempView("PerformingProduct")
+PerformingProduct = spark.sql("""SELECT ingestion_date, is_public_holiday, product_id, 
+                    SUM(highest_reviews) AS tt_review_points, SUM(review) AS highest_reviews, day_of_week, 
+                    (SUM(review) OVER (PARTITION BY review=1)/ SUM(review) OVER ())*100 AS pct_one_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=2)/ SUM(review) OVER ()) *100 AS pct_two_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=3)/ SUM(review) OVER ()) *100 AS pct_three_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=4)/ SUM(review) OVER ()) * 100 AS pct_four_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=5)/ SUM(review) OVER ()) * 100 AS pct_five_star_review, 
+                    (COUNT(CASE WHEN late_shipments<6 THEN product_id END) OVER (PARTITION BY product_id))/(COUNT(product_id) OVER()) AS pct_early_shipments,
+                    (COUNT(CASE WHEN late_shipments>6 OR late_shipments IS NULL THEN product_id END) OVER (PARTITION BY product_id))/(COUNT(product_id) OVER()) AS pct_late_shipments 
+                        FROM (SELECT ingestion_date, is_public_holiday, product_id, review, late_shipments,SUM(review) AS highest_reviews, day_of_week 
+                            FROM PerformingProduct GROUP BY product_id, review, late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY highest_reviews DESC) 
+                                GROUP BY product_id, review,late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY tt_review_points DESC""")
+
+PerformingProduct.show(truncate=False)
+
+
+
+for i in undelivered_orders.collect():
+    cur.execute("""INSERT INTO "1841_analytics"."agg_shipments" (ingestion_date, tt_late_shipments, tt_undelivered_items) VALUES (%s, %s, %s)""",
+            (i["ingestion_date"], i["tt_late_shipments"], i["tt_undelivered_items"] ))
+
+print("Done with undelivered_orders!!!")  
+
+
+
+
+
+
+
+
+
 
 
 
