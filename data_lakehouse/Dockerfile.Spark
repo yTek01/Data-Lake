@@ -14,9 +14,8 @@ RUN apt-get install -y unzip
 RUN unzip awscliv2.zip && rm awscliv2.zip
 RUN ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
 
-COPY ./data_lakehouse/workspace/bronze_data_to_s3.py /opt/bitnami/spark
-COPY ./data_lakehouse/workspace/silver_data.py /opt/bitnami/spark
-COPY ./data_lakehouse/workspace/great_expectations_helper.py /opt/bitnami/spark
+COPY ./data_lakehouse/workspace/data_warehousing_script.py /opt/bitnami/spark
+COPY ./data_lakehouse/workspace/schema_table_setup.py /opt/bitnami/spark
 
 COPY ./data_lakehouse/requirements.txt /
 RUN pip install -r /requirements.txt

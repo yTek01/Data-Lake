@@ -22,11 +22,11 @@ Spark_docker_dag = DAG(
 
 start = DummyOperator(task_id="start", dag=rpa_dag)
 
-bronze_data = DockerOperator(
-    task_id='spark_docker_runner.bronze_data',
+Run_Spark = DockerOperator(
+    task_id='spark_docker_runner.sparkle',
     container_name='spark_container',
     image='spark-air:latest', 
-    command='spark-submit --master spark://master:7077 bronze_data_to_s3.py', 
+    command='spark-submit --master spark://master:7077 data_warehousing_script.py', 
     docker_url='unix://var/run/docker.sock', 
     network_mode='bridge', 
     xcom_all=True, 
@@ -35,19 +35,5 @@ bronze_data = DockerOperator(
     dag=Spark_docker_dag
 )
 
-silver_data = DockerOperator(
-    task_id='spark_docker_runner.silver_data',
-    container_name='spark_container',
-    image='spark-air:latest', 
-    command='spark-submit --master spark://master:7077 silver_data.py', 
-    docker_url='unix://var/run/docker.sock', 
-    network_mode='bridge', 
-    xcom_all=True, 
-    auto_remove=True, 
-    mount_tmp_dir=False,
-    dag=Spark_docker_dag
-)
-
-junction = DummyOperator(task_id="junction", dag=Spark_docker_dag)
 end = DummyOperator(task_id="end", dag=Spark_docker_dag)
-start >> bronze_data >> junction >> silver_data >> end
+start >> Run_Spark >> end

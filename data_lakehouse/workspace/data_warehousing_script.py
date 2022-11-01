@@ -38,8 +38,8 @@ month_list = []
 
 
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-hadoop_conf.set("fs.s3a.access.key", "AKIA5NLUPFOOEVX3VZP6")
-hadoop_conf.set("fs.s3a.secret.key", "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")
+hadoop_conf.set("fs.s3a.access.key", "AKIA5NLUPFOOEVX3VZP6") #HardCoded Intensionally
+hadoop_conf.set("fs.s3a.secret.key", "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") #HardCoded Intensionally
 hadoop_conf.set("fs.s3a.endpoint", "s3.amazonaws.com")
 hadoop_conf.set('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider')
 hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
@@ -143,7 +143,6 @@ undelivered_orders.show()
 for i in undelivered_orders.collect():
     cur.execute("""INSERT INTO "1841_analytics"."agg_shipments" (ingestion_date, tt_late_shipments, tt_undelivered_items) VALUES (%s, %s, %s)""",
             (i["ingestion_date"], i["tt_late_shipments"], i["tt_undelivered_items"] ))
-
 print("Done with undelivered_orders!!!")  
 
 
@@ -167,38 +166,24 @@ Undelivered_shipments = shipment_details.withColumn("undelivered_shipments", F.w
 Undelivered_shipments.createOrReplaceTempView("PerformingProduct")
 PerformingProduct = spark.sql("""SELECT ingestion_date, is_public_holiday, product_id, 
                     SUM(highest_reviews) AS tt_review_points, SUM(review) AS highest_reviews, day_of_week, 
-                    (SUM(review) OVER (PARTITION BY review=1)/ SUM(review) OVER ())*100 AS pct_one_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=1)/ SUM(review) OVER ()) *100 AS pct_one_star_review, 
                     (SUM(review) OVER (PARTITION BY review=2)/ SUM(review) OVER ()) *100 AS pct_two_star_review, 
                     (SUM(review) OVER (PARTITION BY review=3)/ SUM(review) OVER ()) *100 AS pct_three_star_review, 
-                    (SUM(review) OVER (PARTITION BY review=4)/ SUM(review) OVER ()) * 100 AS pct_four_star_review, 
-                    (SUM(review) OVER (PARTITION BY review=5)/ SUM(review) OVER ()) * 100 AS pct_five_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=4)/ SUM(review) OVER ()) *100 AS pct_four_star_review, 
+                    (SUM(review) OVER (PARTITION BY review=5)/ SUM(review) OVER ()) *100 AS pct_five_star_review, 
                     (COUNT(CASE WHEN late_shipments<6 THEN product_id END) OVER (PARTITION BY product_id))/(COUNT(product_id) OVER()) AS pct_early_shipments,
                     (COUNT(CASE WHEN late_shipments>6 OR late_shipments IS NULL THEN product_id END) OVER (PARTITION BY product_id))/(COUNT(product_id) OVER()) AS pct_late_shipments 
                         FROM (SELECT ingestion_date, is_public_holiday, product_id, review, late_shipments,SUM(review) AS highest_reviews, day_of_week 
-                            FROM PerformingProduct GROUP BY product_id, review, late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY highest_reviews DESC) 
+                            FROM PerformingProduct LIMIT 1 GROUP BY product_id, review, late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY highest_reviews DESC) 
                                 GROUP BY product_id, review,late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY tt_review_points DESC""")
 
-PerformingProduct.show(truncate=False)
+PerformingProduct = PerformingProduct.show(1)
 
+for i in PerformingProduct.collect():
+    cur.execute("""INSERT INTO "1841_analytics"."best_performing_product" (ingestion_date, product_id, most_ordered_day,is_public_holiday,tt_review_points,pct_one_star_review, pct_two_star_review, pct_three_star_review, pct_four_star_review, pct_five_star_review, pct_early_shipments,pct_late_review) VALUES (%s, %s, %s,%s, %s, %s, %s,%s, %s, %s,%s, %s)""",
+            (i["ingestion_date"], i["product_id"], i["most_ordered_day"], i["most_ordered_day"], i["is_public_holiday"], i["tt_review_points"], i["pct_one_star_review"], i["pct_two_star_review"], i["pct_three_star_review"], i["pct_four_star_review"], i["pct_five_star_review"], i["pct_early_shipments"], i["pct_late_review"] ))
 
-
-for i in undelivered_orders.collect():
-    cur.execute("""INSERT INTO "1841_analytics"."agg_shipments" (ingestion_date, tt_late_shipments, tt_undelivered_items) VALUES (%s, %s, %s)""",
-            (i["ingestion_date"], i["tt_late_shipments"], i["tt_undelivered_items"] ))
-
-print("Done with undelivered_orders!!!")  
-
-
-
-
-
-
-
-
-
-
-
-
+print("Done with Performing Product tables!!!")  
 
 conn.commit()
 cur.close()

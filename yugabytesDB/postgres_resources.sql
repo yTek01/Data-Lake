@@ -1,5 +1,4 @@
 --
--- PostgreSQL database cluster dump
 --
 
 SET default_transaction_read_only = off;
@@ -30,7 +29,7 @@ GRANT CONNECT ON DATABASE "template1" TO PUBLIC;
 SET default_transaction_read_only = off;
 
 --
--- PostgreSQL database dump
+--
 --
 
 SET statement_timeout = 0;
@@ -42,6 +41,7 @@ SET client_min_messages = warning;
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
+hgftyeytryyyy
 -- DROP SCHEMA IF EXISTS "1841_staging";
 CREATE SCHEMA IF NOT EXISTS "1841_staging";
 -- USE 1841_staging;
@@ -142,6 +142,6 @@ CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
     "pct_four_star_review" decimal NOT NULL,
     "pct_five_star_review" decimal NOT NULL,
     "pct_early_shipments" decimal NOT NULL,
-    "pct_late_review" decimal NOT NULL
+    "pct_late_shipments" decimal NOT NULL
 );
 

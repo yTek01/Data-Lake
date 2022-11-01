@@ -1,6 +1,6 @@
 import psycopg2
 
-HOST = "yb-tserver-n1"
+HOST = "localhost" #yb-tserver-n1
 DATABASE = "Postgres"
 PORT = "5433"
 
@@ -10,8 +10,9 @@ cur = conn.cursor()
 
 cur.execute(
   """
-  DROP TABLE IF EXISTS 1841_staging.orders
+    CREATE SCHEMA IF NOT EXISTS "1841_staging"
   """)
+
 
 cur.execute(
   """
@@ -128,7 +129,7 @@ cur.execute(
   """
     CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
         "ingestion_date" date NOT NULL PRIMARY KEY, 
-        "product_name" integer NOT NULL, 
+        "product_id" integer NOT NULL, 
         "most_ordered_day" integer NOT NULL, 
         "is_public_holiday" boolean NOT NULL, 
         "tt_review_points" integer NOT NULL,
@@ -138,7 +139,7 @@ cur.execute(
         "pct_four_star_review" decimal NOT NULL,
         "pct_five_star_review" decimal NOT NULL,
         "pct_early_shipments" decimal NOT NULL,
-        "pct_late_review" decimal NOT NULL)
+        "pct_late_shipments" decimal NOT NULL)
   """)
 print("Created table 1841_analytics.best_performing_product")
 

@@ -41,6 +41,6 @@ docker exec -it master bash /opt/workspace/dependencies/packages_installer.sh
 
 * Run Spark Jobs from the Docker containers.
 ```BASH
-docker exec -it master spark-submit --master spark://master:7077 /opt/bitnami/spark/bronze_data_to_s3.py
+docker exec -it master spark-submit --master spark://master:7077 /opt/bitnami/spark/data_warehousing_script.py
 ```
 

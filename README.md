@@ -13,13 +13,12 @@ docker build -f data_lakehouse/Dockerfile.Spark . -t spark-air
 docker build -f batch_processing_apache-airflow/Dockerfile.Airflow . -t airflow-spark
 ```
 
-* Start every of the data engines.
+* Start every of the data engines: Airflow, Spark, YugabyteDB (Postgres).
 ```BASH
-docker-compose -f data_lakehouse/docker-compose.Lakehouse.yaml -f yugabytesDB/docker-compose.Yugabyte.yaml up -d
+docker-compose -f data_lakehouse/docker-compose.Lakehouse.yaml -f yugabytesDB/docker-compose.Yugabyte.yaml -f batch_processing_apache-airflow/docker-compose.Airflow.yaml up -d
 ```
 
 * Access Spark
-
 ```BASH
 http://localhost:8090/
 ```
@@ -28,3 +27,11 @@ http://localhost:8090/
 ```BASH
 http://localhost:7000/
 ```
+
+* Access Airflow
+Wait for Airflow to start fully.
+```BASH
+http://localhost:8080/
+```
+
+# Go into the YugabyteDB folder and set up the Database resources. 
