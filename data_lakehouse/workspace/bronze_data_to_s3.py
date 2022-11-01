@@ -16,8 +16,13 @@ AWS_BUCKET_NAME = config('AWS_BUCKET_NAME')
 
 spark = SparkSession \
     .builder \
-    .appName("Data2bot_Assessment") \
+    .appName("Bronze") \
     .getOrCreate()
+
+file_type = "csv"
+infer_schema = "false"
+first_row_is_header = "true"
+delimiter = ","
 
 hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
 hadoop_conf.set("fs.s3a.access.key", "AKIA5NLUPFOOEVX3VZP6")
@@ -28,42 +33,47 @@ hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
 hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
-file_type = "csv"
-infer_schema = "false"
-first_row_is_header = "true"
-delimiter = ","
+tables = ["orders", "reviews", "shipment_deliveries"]
+postgres_url= "jdbc:postgresql://yb-tserver-n1:5433/Postgres" #"jdbc:postgresql://yb-tserver-n1:5433/Postgres"
+postgres_schema = "1841_staging"
 
-order_df = spark.read.format(file_type).option("inferSchema", infer_schema) \
-                .option("header", first_row_is_header) \
-                .option("sep", delimiter) \
-                .load("s3a://d2b-internal-assessment-bucket-assessment/orders_data/orders.csv")
-display(order_df)
+for table in tables:
+    print(f" Loading {table} from S3 bucket ...")
+    data = spark.read.format(file_type).option("inferSchema", infer_schema) \
+                    .option("header", first_row_is_header) \
+                    .option("sep", delimiter) \
+                    .load(f"s3a://d2b-internal-assessment-bucket-assessment/orders_data/{table}.csv")
+    
+    data.show()
+    print(f" Loading {table} to Postgres Database ...")
 
-# orders = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/orders.csv") \
-#                     .option("inferSchema", infer_schema) \
-#                     .option("header", first_row_is_header) \
-#                     .option("sep", delimiter) 
+    data.write \
+    .format("jdbc") \
+    .option("url", postgres_url) \
+    .option("dbtable", f"1841_staging.{table}") \
+    .option("user", "postgres") \
+    .option("password", "") \
+    .option("driver", "org.postgresql.Driver") \
+    .mode("overwrite") \
+    .save() 
 
-
-# reviews = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/reviews.csv")
-# shipments_deliveries = spark.read.csv("s3a://d2b-internal-assessment-bucket-assessment/orders_data/shipments_deliveries.csv")
-
-# orders.show()
-# # reviews.show()
-# # shipments_deliveries.show()
-
-
-# file_location = "/mnt/d2b-internal-assessment-bucket-assessment/orders_data/warehouse/orders/"
-
+    print(f"DONE WRITING {table}")
 
 
+# df.write \
+#         .mode('append') \
+#         .format("jdbc") \
+#         .option("url", f"jdbc:postgresql://localhost:5432/postgres") \
+#         .option("driver", "org.postgresql.Driver") \
+#         .option("dbtable", 'table_test') \
+#         .option("user", 'user') \
+#         .option("password", 'password') \
+#         .save()
 
-# order_df = spark.read.format(file_type).option("inferSchema", infer_schema) \
-#   .option("header", first_row_is_header) \
-#   .option("sep", delimiter) \
-#   .load(file_location)
+#     dataframe.show()
 
-# display(order_df)
+
+
 
 
 
