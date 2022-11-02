@@ -23,14 +23,13 @@ docker cp postgres_resources.sql yb-tserver-n1:/home/yugabyte/
 docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1
 ```
 
-* Log out of the server. 
-```BASH
-exit
-```
-
 * Create the schema and the tables using the command below.
 ```bash
 \i postgres_resources.sql
+```
+* Log out of the server. 
+```BASH
+exit
 ```
 
 * Go into the container and confirm everything is fine
@@ -41,4 +40,9 @@ docker exec -it yb-tserver-n1 /home/yugabyte/bin/ysqlsh -h yb-tserver-n1 -U post
 * List all the tables in the Postgres database. 
 ```bash
 \dt *.*
+```
+
+* Log out of the server. 
+```BASH
+exit
 ```

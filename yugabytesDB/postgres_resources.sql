@@ -41,7 +41,6 @@ SET client_min_messages = warning;
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
-hgftyeytryyyy
 -- DROP SCHEMA IF EXISTS "1841_staging";
 CREATE SCHEMA IF NOT EXISTS "1841_staging";
 -- USE 1841_staging;
@@ -132,7 +131,7 @@ CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_shipments" (
 
 CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
     "ingestion_date" date NOT NULL PRIMARY KEY, 
-    "product_name" integer NOT NULL, 
+    "product_id" integer NOT NULL, 
     "most_ordered_day" integer NOT NULL, 
     "is_public_holiday" boolean NOT NULL, 
     "tt_review_points" integer NOT NULL,

@@ -174,14 +174,14 @@ PerformingProduct = spark.sql("""SELECT ingestion_date, is_public_holiday, produ
                     (COUNT(CASE WHEN late_shipments<6 THEN product_id END) OVER (PARTITION BY product_id))/(COUNT(product_id) OVER()) AS pct_early_shipments,
                     (COUNT(CASE WHEN late_shipments>6 OR late_shipments IS NULL THEN product_id END) OVER (PARTITION BY product_id))/(COUNT(product_id) OVER()) AS pct_late_shipments 
                         FROM (SELECT ingestion_date, is_public_holiday, product_id, review, late_shipments,SUM(review) AS highest_reviews, day_of_week 
-                            FROM PerformingProduct LIMIT 1 GROUP BY product_id, review, late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY highest_reviews DESC) 
+                            FROM PerformingProduct GROUP BY product_id, review, late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY highest_reviews DESC) 
                                 GROUP BY product_id, review,late_shipments, day_of_week, ingestion_date, is_public_holiday ORDER BY tt_review_points DESC""")
 
-PerformingProduct = PerformingProduct.show(1)
+PerformingProduct = PerformingProduct.LIMIT(1)
 
 for i in PerformingProduct.collect():
-    cur.execute("""INSERT INTO "1841_analytics"."best_performing_product" (ingestion_date, product_id, most_ordered_day,is_public_holiday,tt_review_points,pct_one_star_review, pct_two_star_review, pct_three_star_review, pct_four_star_review, pct_five_star_review, pct_early_shipments,pct_late_review) VALUES (%s, %s, %s,%s, %s, %s, %s,%s, %s, %s,%s, %s)""",
-            (i["ingestion_date"], i["product_id"], i["most_ordered_day"], i["most_ordered_day"], i["is_public_holiday"], i["tt_review_points"], i["pct_one_star_review"], i["pct_two_star_review"], i["pct_three_star_review"], i["pct_four_star_review"], i["pct_five_star_review"], i["pct_early_shipments"], i["pct_late_review"] ))
+    cur.execute("""INSERT INTO "1841_analytics"."best_performing_product" (ingestion_date, product_id, most_ordered_day,is_public_holiday,tt_review_points,pct_one_star_review, pct_two_star_review, pct_three_star_review, pct_four_star_review, pct_five_star_review, pct_early_shipments,pct_late_shipments) VALUES (%s, %s, %s,%s, %s, %s, %s,%s, %s, %s,%s, %s)""",
+            (i["ingestion_date"], i["product_id"], i["most_ordered_day"], i["is_public_holiday"], i["tt_review_points"], i["pct_one_star_review"], i["pct_two_star_review"], i["pct_three_star_review"], i["pct_four_star_review"], i["pct_five_star_review"], i["pct_early_shipments"], i["pct_late_shipments"] ))
 
 print("Done with Performing Product tables!!!")  
 
