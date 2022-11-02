@@ -1,10 +1,16 @@
 import psycopg2
 
-HOST = "d2b-internal-assessment-dwh.cxeuj0ektqdz.eu-central-1.rds.amazonaws.com" #yb-tserver-n1
+"""
+All the Variables would be in ENV, I'm setting them in code for now. 
+"""
+
+HOST = "d2b-internal-assessment-dwh.cxeuj0ektqdz.eu-central-1.rds.amazonaws.com" 
 DATABASE = "d2b_assessment"
 PORT = "5432"
+USER = "isaaomol5182"
+PASSWORD = "sLUHI7TUEh"
 
-conn = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user=isaaomol5182 password=sLUHI7TUEh")
+conn = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user={USER} password={PASSWORD}")
 conn.set_session(autocommit=True)
 cur = conn.cursor()
 
@@ -12,7 +18,6 @@ cur.execute(
   """
     CREATE SCHEMA IF NOT EXISTS "staging"
   """)
-
 
 cur.execute(
   """
