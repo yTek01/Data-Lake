@@ -1,22 +1,22 @@
 import psycopg2
 
-HOST = "localhost" #yb-tserver-n1
-DATABASE = "Postgres"
-PORT = "5433"
+HOST = "d2b-internal-assessment-dwh.cxeuj0ektqdz.eu-central-1.rds.amazonaws.com" #yb-tserver-n1
+DATABASE = "d2b_assessment"
+PORT = "5432"
 
-conn = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user=postgres password=")
+conn = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user=isaaomol5182 password=sLUHI7TUEh")
 conn.set_session(autocommit=True)
 cur = conn.cursor()
 
 cur.execute(
   """
-    CREATE SCHEMA IF NOT EXISTS "1841_staging"
+    CREATE SCHEMA IF NOT EXISTS "staging"
   """)
 
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "1841_staging"."orders" (
+    CREATE TABLE IF NOT EXISTS "staging"."orders" (
         "order_id" integer NOT NULL,
         "customer_id" integer NOT NULL,
         "order_date" date NOT NULL,
@@ -25,55 +25,55 @@ cur.execute(
         "quantity" integer NOT NULL,
         "amount" integer NOT NULL)
   """) 
-print("Created table 1841_staging.orders")
+print("Created table staging.orders")
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "1841_staging"."reviews" (
+    CREATE TABLE IF NOT EXISTS "staging"."reviews" (
         "product_id" integer NOT NULL,
         "review" integer NOT NULL)
   """)
-print("Created table 1841_staging.reviews")
+print("Created table staging.reviews")
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "1841_staging"."shipments_deliveries" (
+    CREATE TABLE IF NOT EXISTS "staging"."shipments_deliveries" (
         "shipment_id" integer NOT NULL,
         "order_id" integer NOT NULL,
         "shipment_date" date NULL,
         "delivery_date" date NULL)
   """)
-print("Created table 1841_staging.shipments_deliveries")
+print("Created table staging.shipments_deliveries")
 
 
 cur.execute(
   """
-    CREATE SCHEMA IF NOT EXISTS "if_common"
+    CREATE SCHEMA IF NOT EXISTS "ifcommon"
   """)
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "if_common"."dim_addresses" (
+    CREATE TABLE IF NOT EXISTS "ifcommon"."dim_addresses" (
         "postal_code" integer NOT NULL PRIMARY KEY,
         "country" varchar(40) NOT NULL,
         "region" varchar(40) NOT NULL, 
         "state" varchar(40) NOT NULL,
         "address" varchar(50) NOT NULL)
   """)
-print("Created table if_common.dim_addresses")
+print("Created table ifcommon.dim_addresses")
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "if_common"."dim_products" (
+    CREATE TABLE IF NOT EXISTS "ifcommon"."dim_products" (
     "product_id" integer NOT NULL PRIMARY KEY,
     "product_category" varchar(40) NOT NULL,
     "product_name" varchar(40) NOT NULL)
   """)
-print("Created table if_common.dim_products")
+print("Created table ifcommon.dim_products")
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "if_common"."dim_dates" (
+    CREATE TABLE IF NOT EXISTS "ifcommon"."dim_dates" (
         "calendar_dt" date NOT NULL PRIMARY KEY,
         "year_num" integer NOT NULL,
         "month_of_the_year_num" integer NOT NULL,
@@ -84,22 +84,22 @@ cur.execute(
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "if_common"."dim_customers" (
+    CREATE TABLE IF NOT EXISTS "ifcommon"."dim_customers" (
         "customer_id" integer NOT NULL PRIMARY KEY,
         "customer_name" varchar(40) NOT NULL,
-        "postal_code" integer NOT NULL REFERENCES "if_common"."dim_addresses"(postal_code))
+        "postal_code" integer NOT NULL REFERENCES "ifcommon"."dim_addresses"(postal_code))
   """)
 
-print("Created table if_common.dim_customers")
+print("Created table ifcommon.dim_customers")
 
 cur.execute(
   """
-    CREATE SCHEMA IF NOT EXISTS "1841_analytics"
+    CREATE SCHEMA IF NOT EXISTS "analytics"
   """)
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_public_holiday" (
+    CREATE TABLE IF NOT EXISTS "analytics"."agg_public_holiday" (
         "ingestion_date" date NOT NULL PRIMARY KEY,
         "tt_order_hol_jan" integer NOT NULL,
         "tt_order_hol_feb" integer NOT NULL,
@@ -114,20 +114,20 @@ cur.execute(
         "tt_order_hol_nov" integer NOT NULL,
         "tt_order_hol_dec" integer NOT NULL)
   """)
-print("Created table 1841_analytics.agg_public_holiday")
+print("Created table analytics.agg_public_holiday")
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_shipments" (
+    CREATE TABLE IF NOT EXISTS "analytics"."agg_shipments" (
         "ingestion_date" date NOT NULL PRIMARY KEY, 
         "tt_late_shipments" integer NOT NULL, 
         "tt_undelivered_items" integer NOT NULL)
   """)
-print("Created table 1841_analytics.agg_shipments")
+print("Created table analytics.agg_shipments")
 
 cur.execute(
   """
-    CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
+    CREATE TABLE IF NOT EXISTS "analytics"."best_performing_product" (
         "ingestion_date" date NOT NULL PRIMARY KEY, 
         "product_id" integer NOT NULL, 
         "most_ordered_day" date NOT NULL, 
@@ -141,6 +141,6 @@ cur.execute(
         "pct_early_shipments" decimal NOT NULL,
         "pct_late_shipments" decimal NOT NULL)
   """)
-print("Created table 1841_analytics.best_performing_product")
+print("Created table analytics.best_performing_product")
 
 cur.close()

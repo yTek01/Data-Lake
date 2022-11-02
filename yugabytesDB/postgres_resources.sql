@@ -42,15 +42,15 @@ SET client_min_messages = warning;
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 -- DROP SCHEMA IF EXISTS "1841_staging";
-CREATE SCHEMA IF NOT EXISTS "1841_staging";
+CREATE SCHEMA IF NOT EXISTS "staging";
 -- USE 1841_staging;
 
-CREATE TABLE IF NOT EXISTS "1841_staging"."reviews" (
+CREATE TABLE IF NOT EXISTS "staging"."reviews" (
     "product_id" integer NOT NULL,
     "review" integer NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "1841_staging"."orders" (
+CREATE TABLE IF NOT EXISTS "staging"."orders" (
     "order_id" integer NOT NULL,
     "customer_id" integer NOT NULL,
     "order_date" date NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS "1841_staging"."orders" (
     "amount" integer NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "1841_staging"."shipments_deliveries" (
+CREATE TABLE IF NOT EXISTS "staging"."shipments_deliveries" (
     "shipment_id" integer NOT NULL,
     "order_id" integer NOT NULL,
     "shipment_date" date NULL,
@@ -68,10 +68,10 @@ CREATE TABLE IF NOT EXISTS "1841_staging"."shipments_deliveries" (
 );
 
 -- DROP SCHEMA IF EXISTS "if_common" ;
-CREATE SCHEMA IF NOT EXISTS "if_common" ;
+CREATE SCHEMA IF NOT EXISTS "ifcommon" ;
 -- USE if_common;
 
-CREATE TABLE IF NOT EXISTS "if_common"."dim_addresses" (
+CREATE TABLE IF NOT EXISTS "ifcommon"."dim_addresses" (
     "postal_code" integer NOT NULL PRIMARY KEY,
     "country" varchar(40) NOT NULL,
     "region" varchar(40) NOT NULL, 
@@ -80,14 +80,14 @@ CREATE TABLE IF NOT EXISTS "if_common"."dim_addresses" (
 );
 
 
-CREATE TABLE IF NOT EXISTS "if_common"."dim_products" (
+CREATE TABLE IF NOT EXISTS "ifcommon"."dim_products" (
     "product_id" integer NOT NULL PRIMARY KEY,
     "product_category" varchar(40) NOT NULL,
     "product_name" varchar(40) NOT NULL
 );
 
 
-CREATE TABLE IF NOT EXISTS "if_common"."dim_dates" (
+CREATE TABLE IF NOT EXISTS "ifcommon"."dim_dates" (
     "calendar_dt" date NOT NULL PRIMARY KEY,
     "year_num" integer NOT NULL,
     "month_of_the_year_num" integer NOT NULL,
@@ -97,17 +97,17 @@ CREATE TABLE IF NOT EXISTS "if_common"."dim_dates" (
 );
 
 
-CREATE TABLE IF NOT EXISTS "if_common"."dim_customers" (
+CREATE TABLE IF NOT EXISTS "ifcommon"."dim_customers" (
   "customer_id" integer NOT NULL PRIMARY KEY,
   "customer_name" varchar(40) NOT NULL,
-  "postal_code" integer NOT NULL REFERENCES "if_common"."dim_addresses"(postal_code)
+  "postal_code" integer NOT NULL REFERENCES "ifcommon"."dim_addresses"(postal_code)
 );
 
 
-CREATE SCHEMA IF NOT EXISTS "1841_analytics";
+CREATE SCHEMA IF NOT EXISTS "analytics";
 -- USE 1841_analytics ;
 
-CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_public_holiday" (
+CREATE TABLE IF NOT EXISTS "analytics"."agg_public_holiday" (
     "ingestion_date" date NOT NULL PRIMARY KEY,
     "tt_order_hol_jan" integer NOT NULL,
     "tt_order_hol_feb" integer NOT NULL,
@@ -123,13 +123,13 @@ CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_public_holiday" (
     "tt_order_hol_dec" integer NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "1841_analytics"."agg_shipments" (
+CREATE TABLE IF NOT EXISTS "analytics"."agg_shipments" (
     "ingestion_date" date NOT NULL PRIMARY KEY, 
     "tt_late_shipments" integer NOT NULL, 
     "tt_undelivered_items" integer NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
+CREATE TABLE IF NOT EXISTS "analytics"."best_performing_product" (
     "ingestion_date" date NOT NULL PRIMARY KEY, 
     "product_id" integer NOT NULL, 
     "most_ordered_day" date NOT NULL, 
