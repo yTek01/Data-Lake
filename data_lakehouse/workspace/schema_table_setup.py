@@ -130,7 +130,7 @@ cur.execute(
     CREATE TABLE IF NOT EXISTS "1841_analytics"."best_performing_product" (
         "ingestion_date" date NOT NULL PRIMARY KEY, 
         "product_id" integer NOT NULL, 
-        "most_ordered_day" integer NOT NULL, 
+        "most_ordered_day" date NOT NULL, 
         "is_public_holiday" boolean NOT NULL, 
         "tt_review_points" integer NOT NULL,
         "pct_one_star_review" decimal NOT NULL,
