@@ -12,11 +12,15 @@ import psycopg2
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
-s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+# s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
 
 
+s3 = boto3.resource('s3',
+       aws_access_key_id = 'AKIA5NLUPFOOEVX3VZP6',
+       aws_secret_access_key= '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',
+       region_name = 'us-east-1')
 
-today = date.today().strftime("%b-%d-%Y")
+
 
 AWS_ACCESS_KEY = config('AWS_ACCESS_KEY')
 AWS_SECRET_KEY = config('AWS_SECRET_KEY')
@@ -60,6 +64,8 @@ hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 hadoop_conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") 
 hadoop_conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
 
+
+
 order_table = spark.read.format(file_type).option("inferSchema", infer_schema) \
                 .option("header", first_row_is_header) \
                 .option("sep", delimiter) \
@@ -76,7 +82,11 @@ shipment_deliveries_table = spark.read.format(file_type).option("inferSchema", i
                 .load("s3a://d2b-internal-assessment-bucket-assessment/orders_data/shipment_deliveries.csv")
 shipment_deliveries_table.show()
 
+
+
 print("................Inserting into Staging............!")
+
+
 
 
 conn.set_session(autocommit=True)
@@ -90,6 +100,7 @@ for i in reviews_table.collect():
     cur.execute("""INSERT INTO "staging"."reviews" (product_id, review) VALUES (%s, %s)""",
             (i["product_id"], i["review"]))
     print("Done with reviews_table!")
+
 
 for i in shipment_deliveries_table.collect():
     cur.execute("""INSERT INTO "staging"."shipments_deliveries" (shipment_id, order_id, shipment_date, delivery_date) VALUES (%s, %s, %s, %s)""",
@@ -123,10 +134,13 @@ shipment_deliveries = spark.read \
                 .option("password", "") \
                 .option("driver", "org.postgresql.Driver")  \
                 .load()
-
 Fact_table = reviews.join(orders, 'product_id') \
                       .join(shipment_deliveries, 'order_id') \
                       .drop_duplicates()
+
+
+
+
 
 Fact_table.show()
 total_order = Fact_table.withColumn('day_of_month',dayofmonth(Fact_table.order_date)) \
@@ -136,15 +150,23 @@ total_order = Fact_table.withColumn('day_of_month',dayofmonth(Fact_table.order_d
                                     .withColumn('month_of_the_year_num',month(Fact_table.order_date)) \
                                     .select("amount","quantity", "day_of_month", "day_of_week", "working_day", "year_num", "month_of_the_year_num", "year_num") 
 
+
+
+
 total_order = total_order.filter(total_order.working_day != "true")
 expr = [F.sum(F.col("quantity")).alias("total_order"),
         F.max(F.col("amount")).alias("total_prices")]
 agg_public_holiday = total_order.groupBy(["month_of_the_year_num"]).agg(*expr) \
                                 .orderBy(col("month_of_the_year_num").asc()) 
 
+
+
+
 for i in range(1, 13):
     data = agg_public_holiday.where(col('month_of_the_year_num')==str(i)).select('total_order').collect()[0].total_order
     month_list.append(data)
+
+
 
 agg_public_holiday = spark.createDataFrame([tuple(month_list)], ["tt_order_hol_jan", "tt_order_hol_feb", "tt_order_hol_mar",
                                                                 "tt_order_hol_apr", "tt_order_hol_may", "tt_order_hol_jun", 
@@ -153,8 +175,14 @@ agg_public_holiday = spark.createDataFrame([tuple(month_list)], ["tt_order_hol_j
 agg_public_holiday = agg_public_holiday.withColumn("ingestion_date",current_date())
 
 
-agg_public_holiday.toPandas().to_csv("agg_public_holiday.csv")
-s3.upload_file("agg_public_holiday.csv", bucket_name, "analytics_export/isaaomol5182/agg_public_holiday.csv")
+
+# agg_public_holiday.toPandas().to_csv("agg_public_holiday.csv")
+# s3.upload_file("agg_public_holiday.csv", bucket_name, "analytics_export/isaaomol5182/agg_public_holiday.csv")
+
+
+object = s3.Object('d2b-internal-assessment-bucket-assessment', 'agg_public_holiday.csv')
+object.upload_file('agg_public_holiday.csv')
+
 
 
 for i in agg_public_holiday.collect():
@@ -163,10 +191,13 @@ for i in agg_public_holiday.collect():
 print("Done with agg_public_holiday!")  
 
 
+
 shipment_details = Fact_table.withColumn("dateDiff", datediff(Fact_table.shipment_date, Fact_table.order_date))
 shipment_details = shipment_details.withColumn("late_shipments", F.when((F.col("dateDiff") >= 6) & (F.col("delivery_date").isNull()), \
                                             1) \
                                             .otherwise(0))
+
+
 #Scaffolding
 shipment_details = shipment_details.withColumn("current_date", lit("2022-09-05")) \
                                    .withColumn("ingestion_date",current_date())           
@@ -176,13 +207,20 @@ shipment_details = shipment_details.withColumn("undelivered_shipments", F.when((
                                                                     (F.col("days_left")>15),1) \
                                                                     .otherwise(0))
 
+
+
 undelivered = shipment_details.select("ingestion_date", "order_date", "undelivered_shipments","delivery_date", "late_shipments", "shipment_date", "quantity")
 undelivered.createOrReplaceTempView("undeliveredOrders")
 undelivered_orders = spark.sql("SELECT ingestion_date, SUM(undelivered_shipments) OVER () AS tt_undelivered_items, SUM(late_shipments) OVER () AS tt_late_shipments FROM undeliveredOrders LIMIT 1")
 undelivered_orders.show()
 
-undelivered_orders.toPandas().to_csv("agg_shipments.csv")
-s3.upload_file("agg_shipments.csv", bucket_name, "analytics_export/isaaomol5182/agg_shipments.csv")
+
+
+# undelivered_orders.toPandas().to_csv("agg_shipments.csv")
+# s3.upload_file("agg_shipments.csv", bucket_name, "analytics_export/isaaomol5182/agg_shipments.csv")
+
+object = s3.Object('d2b-internal-assessment-bucket-assessment', 'agg_shipments.csv')
+object.upload_file('agg_shipments.csv')
 
 for i in undelivered_orders.collect():
     cur.execute("""INSERT INTO "analytics"."agg_shipments" (ingestion_date, tt_late_shipments, tt_undelivered_items) VALUES (%s, %s, %s)""",
@@ -190,11 +228,14 @@ for i in undelivered_orders.collect():
 print("Done with undelivered_orders!!!")  
 
 
+
+
 landing = Fact_table.withColumn('day_of_month',dayofmonth(Fact_table.order_date)) \
                                 .withColumn('day_of_week',dayofweek(Fact_table.order_date)) \
                                 .withColumn("is_public_holiday",F.when(F.col("day_of_week") > 5, True).otherwise(False)) \
                                 .withColumn('year_num',year(Fact_table.order_date)) \
                                 .withColumn('month_of_the_year_num',month(Fact_table.order_date)) 
+
 
 
 shipment_details = landing.withColumn("dateDiff", datediff(landing.shipment_date, landing.order_date)) \
@@ -206,6 +247,9 @@ Undelivered_shipments = shipment_details.withColumn("undelivered_shipments", F.w
                                                                     (F.col("shipment_date").isNull()) & \
                                                                     (F.col("dateDiff")>15),1) \
                                                                     .otherwise(0))
+
+
+
 
 Undelivered_shipments.createOrReplaceTempView("PerformingProduct")
 PerformingProduct = spark.sql("""SELECT ingestion_date, is_public_holiday, product_id, 
@@ -223,15 +267,18 @@ PerformingProduct = spark.sql("""SELECT ingestion_date, is_public_holiday, produ
 
 PerformingProduct = PerformingProduct.limit(1)
 
+# PerformingProduct.toPandas().to_csv("best_performing_product.csv")
+# s3.upload_file("best_performing_product.csv", bucket_name, "analytics_export/isaaomol5182/best_performing_product.csv")
 
+object = s3.Object('d2b-internal-assessment-bucket-assessment', 'best_performing_product.csv')
+object.upload_file('best_performing_product.csv')
 
-PerformingProduct.toPandas().to_csv("best_performing_product.csv")
-s3.upload_file("best_performing_product.csv", bucket_name, "analytics_export/isaaomol5182/best_performing_product.csv")
 for i in PerformingProduct.collect():
     cur.execute("""INSERT INTO "analytics"."best_performing_product" (ingestion_date, product_id, most_ordered_day,is_public_holiday,tt_review_points,pct_one_star_review, pct_two_star_review, pct_three_star_review, pct_four_star_review, pct_five_star_review, pct_early_shipments,pct_late_shipments) VALUES (%s, %s, %s,%s, %s, %s, %s,%s, %s, %s,%s, %s)""",
             (i["ingestion_date"], i["product_id"], i["order_date"], i["is_public_holiday"], i["tt_review_points"], i["pct_one_star_review"], i["pct_two_star_review"], i["pct_three_star_review"], i["pct_four_star_review"], i["pct_five_star_review"], i["pct_early_shipments"], i["pct_late_shipments"] ))
-
 print("Done with Performing Product tables!!!")  
+
+
 conn.commit()
 cur.close()
 conn.close()
