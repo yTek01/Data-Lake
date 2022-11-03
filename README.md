@@ -5,7 +5,7 @@ Here is the thing, I am going to build the all the Docker images, and then ruN a
 ### Build the Spark image; the master and the worker node. 
 This is a repository that presents the solution to the assessment for the Data Engineering role at Data2Bot.
 
-![alt text](https://github.com/yTek01/Data-Lake/blob/DataLake-warehousing/Screenshot_20221102_035727.png)
+![alt text](https://github.com/yTek01/Data-Lake/blob/DataLake-warehousing/dwh.png)
 
 ```BASH
 docker build -f data_lakehouse/Dockerfile.Spark . -t spark-air
