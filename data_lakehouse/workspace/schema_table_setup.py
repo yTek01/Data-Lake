@@ -7,8 +7,8 @@ PORT = config("PORT")
 USER = config("USER")
 PASSWORD = config("PASSWORD")
 
-conn = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user={USER} password={PASSWORD}")
-conn.set_session(autocommit=True)
+connection = psycopg2.connect(f"host={HOST} port={PORT} dbname={DATABASE} user={USER} password={PASSWORD}")
+connection.set_session(autocommit=True)
 cur = conn.cursor()
 
 cur.execute(
