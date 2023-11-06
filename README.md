@@ -38,3 +38,15 @@ Apache Spark and YugabytesDB
 ```BASH
 docker-compose -f data_lakehouse/docker-compose.Lakehouse.yaml -f yugabytesDB/docker-compose.Yugabyte.yaml up -d
 ```
+
+## Install AWS cli
+```
+bash ./install_aws_cli.sh
+```
+
+
+## Command to Get the data
+```
+aws s3 cp --no-sign-request s3://ford-multi-av-seasonal/Sample-Data.tar.gz - | tar -xz
+```
+
