@@ -5,6 +5,7 @@ from shapely.geometry import Point
 import numpy as np
 import sys
 import traceback
+import glob
 #import pylas
 import numpy as np
 import pylas
@@ -104,6 +105,17 @@ def laz_to_las(in_dir):
         tbinfo = traceback.format_tb(tb)[0]
         print('Error in read_xmp.py')
         print ("PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1]))   
+
+
+def get_all_laz_files_in_folder():
+    
+    folder_path = '/path/to/your/folder/*'  
+    file_list = glob.glob(folder_path)
+
+    for file in file_list:
+        print(file)
+
+
 
 if __name__ == "__main__":
     #laz_to_las("/home/gitpod/whitebox_workflows/Kitchener_lidar/")

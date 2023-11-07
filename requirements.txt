@@ -4,3 +4,4 @@ shapely
 laspy[lazrs,laszip]
 pylas[lazrs,laszip]
 pyvista
+boto3
