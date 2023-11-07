@@ -60,4 +60,10 @@ Download files example:
 aws s3 cp s3://pc-bulk/CA13_Guo/ . --recursive --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request
 ```
 
+```
+
+aws s3 cp s3://pc-bulk/CA13_Guo/ot_TNF_003360.laz . --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request
+```
+
+
 
