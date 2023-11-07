@@ -52,3 +52,12 @@ aws s3 cp --no-sign-request s3://ford-multi-av-seasonal/Sample-Data.tar.gz - | t
 
 
 
+```
+List all files example:
+aws s3 ls s3://pc-bulk/CA13_Guo/ --recursive --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request
+
+Download files example:
+aws s3 cp s3://pc-bulk/CA13_Guo/ . --recursive --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request
+```
+
+

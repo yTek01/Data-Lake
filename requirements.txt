@@ -2,3 +2,5 @@ laspy
 geopandas
 shapely
 laspy[lazrs,laszip]
+pylas[lazrs,laszip]
+open3d
