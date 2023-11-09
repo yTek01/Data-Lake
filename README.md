@@ -66,5 +66,9 @@ aws s3 cp s3://pc-bulk/CA13_Guo/ot_TNF_003360.laz . --endpoint-url https://opent
 
 
 ```
+docker pull apache/sedona:1.5.0
+```
+
+```
 docker run -p 8888:8888 -p 8080:8080 -p 8081:8081 -p 4040:4040 apache/sedona:1.5.0
 ```

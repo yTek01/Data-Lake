@@ -1,12 +1,13 @@
 
 import boto3
 from botocore import UNSIGNED
+import botocore
 from botocore.config import Config
 import os
 
 bucket_name = 'pc-bulk'
 s3_folder = 'CA13_Guo/'  
-local_dir = '/workspace/Data-Lake/data/'
+local_dir = '/workspace/Data-Lake/'
 
 s3_client = boto3.client('s3', config=Config(signature_version=UNSIGNED), endpoint_url='https://opentopography.s3.sdsc.edu')
 
